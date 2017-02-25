@@ -70,6 +70,11 @@ extern DMA_HandleTypeDef hdma_adc3;
 */
 void NMI_Handler(void)
 {
+  while(1){
+    __NOP();
+    __NOP();
+    __NOP();
+  }
   /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
 
   /* USER CODE END NonMaskableInt_IRQn 0 */
@@ -152,6 +157,12 @@ void UsageFault_Handler(void)
 */
 void SVC_Handler(void)
 {
+  while(1){
+    __NOP();
+    __NOP();
+    __NOP();
+  }
+
   /* USER CODE BEGIN SVCall_IRQn 0 */
 
   /* USER CODE END SVCall_IRQn 0 */
@@ -178,6 +189,12 @@ void DebugMon_Handler(void)
 */
 void PendSV_Handler(void)
 {
+  while(1){
+    __NOP();
+    __NOP();
+    __NOP();
+  }
+
   /* USER CODE BEGIN PendSV_IRQn 0 */
 
   /* USER CODE END PendSV_IRQn 0 */

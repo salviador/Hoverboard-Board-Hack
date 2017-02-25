@@ -42,7 +42,6 @@ VARIE
 */
 #include "main.h"
 #include "stm32f1xx_hal.h"
-#include "uart.h"
 #include "i2c.h"
 #include "motor_L.h"
 #include "motor_R.h"
@@ -52,6 +51,7 @@ VARIE
 #include "delay.h"
 #include "pid.h"
 #include "application.h"
+#include "telemetry.h"
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -62,7 +62,7 @@ void Error_Handler(void);
 static void MX_IWDG_Init(void);
 IWDG_HandleTypeDef hiwdg;
 
-
+extern struct TELEMETRY_dati telemetry;
 
 //TEMP
 /*
@@ -72,6 +72,8 @@ volatile __IO int32_t temp_SET_SPPED;
 volatile __IO uint8_t bufferTX[100],ai2cBuffer[10];
 int32_t speed;
 */
+volatile __IO uint32_t counterTemp,counterTempTT;
+
 int main(void)
 {
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
@@ -85,8 +87,19 @@ int main(void)
   _init_us();
  
   MX_I2C2_Init();
-  MX_USART2_UART_Init();
-
+  Telemetry_init();
+  
+ /* 
+  while(1){
+  
+      Telemetry_TASK();
+      if(telemetry.dataREADY_JOYSTICK){
+          telemetry.dataREADY_JOYSTICK = 0;
+      }
+  
+  }
+  */
+  
   Buzzer_init();
   Led_init();
   IS_Charge_init();
@@ -100,7 +113,6 @@ int main(void)
   //PID_set_L_costant(0.05,0.01,0.0);
   //PID_set_R_costant(2.0,0.5,0.0);
   
-
 //DebugPin_init();
 
   Led_Set(1);
@@ -111,10 +123,14 @@ int main(void)
   applcation_init();
   
   while(1){
+    counterTemp = HAL_GetTick();
+      
     Battery_TASK();
+    Current_Motor_TASK();    
     WiiNunchuck_TASK();
     applcation_TASK();
-    
+    Telemetry_TASK();
+   
     //Batteria Scarica?
     if(GET_BatteryAverage() < 31.0){
       TASK_BATTERY_LOW_VOLTAGE();    
@@ -123,28 +139,18 @@ int main(void)
     if(IS_Charge()==0){
       WAIT_CHARGE_FINISH();
     }
-    
+
     HAL_IWDG_Refresh(&hiwdg);   //819mS
-  }
-  
-  
-  
-  
-  //test
-//  MotorL_start();
-//  MotorR_start();
- /*
-  temp_SET_SPPED = 0;
+    
+    counterTempTT = HAL_GetTick() - counterTemp;
+    
+    
 
-     
-  while (1)
-  {
-     
-    MotorR_pwm(temp_SET_SPPED);
+
+    
     
   }
-   */
-
+ 
 }
 
 /** System Clock Configuration

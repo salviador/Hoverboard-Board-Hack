@@ -76,7 +76,7 @@ float GET_MOTOR_R_AMP(void){
   uint16_t data = adc_Rdati.data[1];
   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);    
   if(data<ADC_MOTOR_R_CENTER){
-    return 0;
+    return 0.0;
   }
   return (data - ADC_MOTOR_R_CENTER) * MOTOR_R_AMP_CONV_AMP;
 }

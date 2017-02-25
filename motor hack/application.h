@@ -6,9 +6,9 @@
 #endif 
    #include "stm32f1xx_hal.h"
 
-   #define ACCELLERATION_CONSTANT   0.1;  //1;  //30; //0.1;
+   #define ACCELLERATION_CONSTANT   0.3;  //1;  //30; //0.1;
    
-   enum APP_STATO {app_init, app_soft_run, app_soft_run_nohand};
+   enum APP_STATO {app_init, app_soft_run, app_soft_run_nohand, app_soft_ANDROIDAPP};
    
     struct APPLICATION_dati{
       volatile __IO uint8_t stato;
@@ -16,6 +16,8 @@
       volatile __IO float ayn;
       volatile __IO float axn; 
       volatile __IO uint32_t tcruise_decrement;
+      volatile __IO uint32_t tAndroidAPP;
+      
       volatile __IO float cruise_soft_run_nohand;      
       volatile __IO float center_media_X;
       volatile __IO float center_media_Y;
@@ -23,7 +25,17 @@
       volatile __IO float faccX;     
       volatile __IO int16_t motATS;
       volatile __IO int16_t motBTS;          
-   };
+      
+      volatile __IO uint32_t Current_time_measure;
+      volatile __IO uint32_t somma_current_m_L;
+      volatile __IO uint32_t somma_current_m_R;
+      volatile __IO uint16_t current_counter_media;
+      
+      //Current motor
+      volatile __IO float Current_M_LEFT;
+      volatile __IO float Current_M_RIGHT;
+      
+    };
    
    struct BATTERY_dati{
       volatile __IO float VBatt;
@@ -41,6 +53,7 @@
   float GET_BatteryAverage(void);
   void TASK_BATTERY_LOW_VOLTAGE(void);
   void WAIT_CHARGE_FINISH(void);
+  void Current_Motor_TASK(void);
   
   float normalize_y(uint8_t y);
   float normalize_x(uint8_t x);

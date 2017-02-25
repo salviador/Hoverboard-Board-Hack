@@ -2119,6 +2119,12 @@
       <name>$PROJ_DIR$\pid.h</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\telemetry.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\telemetry.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\uart.c</name>
     </file>
     <file>

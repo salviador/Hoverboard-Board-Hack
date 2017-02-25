@@ -5,11 +5,15 @@
 #include "ADC_L.h"
 #include "ADC_R.h"
 #include "varie.h"
+#include "telemetry.h"
 #include <stdlib.h>
+
+extern IWDG_HandleTypeDef hiwdg;
 
 volatile __IO struct APPLICATION_dati app;
 volatile __IO struct BATTERY_dati battery_dati;
 extern volatile __IO struct WII_JOYdati wii_JOYdati;
+extern struct TELEMETRY_dati telemetry;
 
 float GET_BatteryAverage(void){
   return battery_dati.VBatt;
@@ -62,6 +66,8 @@ void applcation_TASK(void){
       letture = 0;
       wii_JOYdati.done = 0;
       do{
+        HAL_IWDG_Refresh(&hiwdg);   //819mS
+        
         while(wii_JOYdati.done==0){WiiNunchuck_TASK();}
         wii_JOYdati.done = 0;
         if((wii_JOYdati.ay < 129) && (wii_JOYdati.ay > 124)){
@@ -77,6 +83,8 @@ void applcation_TASK(void){
       letture = 0;
       wii_JOYdati.done = 0;
       do{
+        HAL_IWDG_Refresh(&hiwdg);   //819mS
+        
         while(wii_JOYdati.done==0){WiiNunchuck_TASK();}
         wii_JOYdati.done = 0;
         if((wii_JOYdati.ax < 129) && (wii_JOYdati.ax > 124)){
@@ -130,6 +138,12 @@ void applcation_TASK(void){
       }else{
         app.tsoft_run = HAL_GetTick();
       }                        
+      //Android APP ?
+      if(telemetry.dataREADY_JOYSTICK){
+        telemetry.dataREADY_JOYSTICK  = 0;
+        app.stato = app_soft_ANDROIDAPP;
+        app.tAndroidAPP = HAL_GetTick();        
+      }
     break;
     
     case app_soft_run_nohand:
@@ -179,6 +193,53 @@ void applcation_TASK(void){
       go_motor(tempf1, tempf2, battery_dati.VBatt);            
     break;
   
+    case app_soft_ANDROIDAPP:
+     //ANDROID APP
+      if(telemetry.dataREADY_JOYSTICK){
+        telemetry.dataREADY_JOYSTICK  = 0;
+        app.tAndroidAPP = HAL_GetTick();        
+      }
+      if((HAL_GetTick() - app.tAndroidAPP)>500){    //Se non ricevi risposta dalla APP esci dalla modalita ANDROID APP [BLYNK]
+        MotorR_stop();     
+        MotorL_stop();     
+        app.cruise_soft_run_nohand = 0.0;
+        app.stato = app_init;
+        break;
+      }
+
+      app.ayn = (float)telemetry.joyy;
+      app.axn = (float)telemetry.joyx;
+      if(app.ayn > 300.0){
+        app.ayn = 300.0;
+      }
+      if(app.axn > 300.0){
+        app.axn = 300.0;
+      }
+      if(app.ayn < 0.0){
+        app.ayn = 0.0;
+      }
+      if(app.axn < 0){
+        app.axn = 0.0;
+      }
+
+      app.ayn = app.ayn - 75.0;
+      app.axn = app.axn - 75.0;
+
+      //scala x soft run
+      tempf1 = app.ayn; 
+      tempf2 = battery_dati.VBatt;       
+      app.ayn = scale_y(tempf1, tempf2);
+      tempf1 = app.axn; 
+      tempf2 = battery_dati.VBatt;       
+      app.axn = scale_x(tempf1, tempf2);
+
+      app.ayn = accellerationY(app.ayn);
+      app.axn = accellerationX(app.axn);
+      tempf1 = app.ayn;
+      tempf2 = app.axn;
+      go_motor(tempf1, tempf2, battery_dati.VBatt);
+    break;
+    
     default:
         MotorR_stop();     
         MotorL_stop();     
@@ -259,15 +320,15 @@ float scale_x(float x, float Vbatt){
   return axn;
 }
                                   //Vbatt,      Power max
-const float Battery_power[][10] = {{40.0,       30.0/100.0},    //30% max potenza
-                                  {38.0,        31.0/100.0},
-                                  {37.0,        32.0/100.0},
-                                  {36.0,        33.0/100.0},
-                                  {35.0,        34.0/100.0},
-                                  {34.0,        35.0/100.0},
-                                  {33.0,        36.0/100.0},
-                                  {32.0,        37.0/100.0},
-                                  {31.0,        38.0/100.0},
+const float Battery_power[][10] = {{40.0,       43.0/100.0},    //30% max potenza
+                                  {38.0,        45.0/100.0},
+                                  {37.0,        45.0/100.0},
+                                  {36.0,        45.0/100.0},
+                                  {35.0,        45.0/100.0},
+                                  {34.0,        46.0/100.0},
+                                  {33.0,        47.0/100.0},
+                                  {32.0,        48.0/100.0},
+                                  {31.0,        49.0/100.0},
                                   {30.0,        50.0/100.0}};
 float get_powerMax(float Vbattery){
   if(Vbattery >= Battery_power[0][0]){
@@ -436,7 +497,7 @@ void Battery_TASK(void){
     
    battery_dati.somma_batt = battery_dati.somma_batt  + ADC_BATTERY();
    battery_dati.counter_media++;
-   if(battery_dati.counter_media > 10){
+   if(battery_dati.counter_media >= 10){
     battery_dati.counter_media = 0;
       
       //Batteria media valore
@@ -448,8 +509,44 @@ void Battery_TASK(void){
   }
 }
 
-//  MOTOR
+// CURRENT MOTOR TASK
 
+void Current_Motor_TASK(void){
+  if((HAL_GetTick() - app.Current_time_measure)>100){
+    app.Current_time_measure = HAL_GetTick();
+    
+   app.somma_current_m_L = app.somma_current_m_L  + ADC_MOTOR_LEFT();
+   app.somma_current_m_R = app.somma_current_m_R  + ADC_MOTOR_RIGHT();
+   
+   app.current_counter_media++;
+   if(app.current_counter_media >= 10){
+    app.current_counter_media = 0;
+      
+      //Current media valore
+      app.Current_M_LEFT = (float)app.somma_current_m_L / 10.0;     
+      app.Current_M_RIGHT = (float)app.somma_current_m_R / 10.0;     
+      
+      if(app.Current_M_RIGHT < ADC_MOTOR_R_CENTER){
+        app.Current_M_RIGHT = 0.0;
+      }else{
+        app.Current_M_RIGHT = ((app.Current_M_RIGHT  - ADC_MOTOR_R_CENTER) * MOTOR_R_AMP_CONV_AMP);
+      }
+      if(app.Current_M_LEFT < ADC_MOTOR_L_CENTER){
+        app.Current_M_LEFT = 0.0;
+      }else{
+        app.Current_M_LEFT = ((app.Current_M_LEFT  - ADC_MOTOR_L_CENTER) * MOTOR_L_AMP_CONV_AMP);
+      }
+      
+      app.somma_current_m_L = 0;
+      app.somma_current_m_R = 0;
+   }
+  }
+}
+
+
+
+
+//  MOTOR
 
 // EXPERIMENT
 // http://www.impulseadventure.com/elec/robot-differential-steering.html
