@@ -26,13 +26,28 @@ void TASK_BATTERY_LOW_VOLTAGE(void){
   }
 }
 void WAIT_CHARGE_FINISH(void){
+  uint32_t timerBatteryC; 
+
   Led_Set(1);
   MotorR_stop();
   MotorL_stop();   
+  HAL_IWDG_Refresh(&hiwdg);   //819mS  
   Buzzer_OneLongBeep();
+  HAL_IWDG_Refresh(&hiwdg);   //819mS  
   Buzzer_OneLongBeep();  
+  timerBatteryC = HAL_GetTick(); 
+  
   while(IS_Charge()==0){
-    HAL_Delay(5000);  
+    HAL_IWDG_Refresh(&hiwdg);   //819mS
+    HAL_Delay(250);  
+    Battery_TASK();
+    if(GET_BatteryAverage() < 41.250){
+      timerBatteryC = HAL_GetTick();       
+    }
+    if((HAL_GetTick() - timerBatteryC) > 20000){ //600000       x 20Sec, batteria sopra i 42Volt, avverti che è carica!!
+      Buzzer_OneLongBeep();  
+      HAL_IWDG_Refresh(&hiwdg);   //819mS
+    }
   }
   Led_Set(0);
   applcation_init();
@@ -98,6 +113,8 @@ void applcation_TASK(void){
       }while(letture < 50);
       app.center_media_X = app.center_media_X / 50.0;
             
+      accelleration_XY_Reset();
+      
       app.tsoft_run = HAL_GetTick();
       app.stato = app_soft_run;
       MotorR_start();
@@ -122,8 +139,10 @@ void applcation_TASK(void){
 
       app.ayn = accellerationY(app.ayn);
       app.axn = accellerationX(app.axn);
+      
       tempf1 = app.ayn;
       tempf2 = app.axn;
+      
       go_motor(tempf1, tempf2, battery_dati.VBatt);
 
       //soft_run_nohand
@@ -133,7 +152,7 @@ void applcation_TASK(void){
             app.cruise_soft_run_nohand = 0.0;
             app.stato = app_soft_run_nohand;
             app.tcruise_decrement = HAL_GetTick();
-             Buzzer_OneShortBeep();
+            Buzzer_OneShortBeep();
         }
       }else{
         app.tsoft_run = HAL_GetTick();
@@ -141,8 +160,12 @@ void applcation_TASK(void){
       //Android APP ?
       if(telemetry.dataREADY_JOYSTICK){
         telemetry.dataREADY_JOYSTICK  = 0;
-        app.stato = app_soft_ANDROIDAPP;
-        app.tAndroidAPP = HAL_GetTick();        
+        if(telemetry.dataLast_Command == 'R'){
+          app.stato = app_soft_ANDROIDAPP;
+          app.tAndroidAPP = HAL_GetTick();        
+          accelleration_XY_Reset();
+        }
+        telemetry.dataLast_Command = 0;
       }
     break;
     
@@ -169,7 +192,7 @@ void applcation_TASK(void){
         }
       }
        //Decrementa Cruise
-      if((app.ayn < -5.0)&&(app.ayn > -20.0)){
+      if((app.ayn < -5.0)&&(app.ayn > -23.0)){
         //con time step
         if((HAL_GetTick() - app.tcruise_decrement)>250){
           tempf1 = app.ayn / 10.0;               
@@ -181,9 +204,11 @@ void applcation_TASK(void){
         }
       }     
       //Stop Cruise
-      if(app.ayn <= -20.0){
+      if(app.ayn <= -23.0){
+        go_motor(0, 0, battery_dati.VBatt);     
         MotorR_stop();     
-        MotorL_stop();     
+        MotorL_stop();             
+        accelleration_XY_Reset();        
         app.cruise_soft_run_nohand = 0.0;
         app.stato = app_init;
         break;
@@ -198,14 +223,25 @@ void applcation_TASK(void){
       if(telemetry.dataREADY_JOYSTICK){
         telemetry.dataREADY_JOYSTICK  = 0;
         app.tAndroidAPP = HAL_GetTick();        
+        if(telemetry.dataLast_Command == 'F'){
+          MotorR_stop();     
+          MotorL_stop();     
+          accelleration_XY_Reset();          
+          app.cruise_soft_run_nohand = 0.0;
+          app.stato = app_init;
+          telemetry.dataLast_Command = 0;
+          break;
+        }
       }
       if((HAL_GetTick() - app.tAndroidAPP)>500){    //Se non ricevi risposta dalla APP esci dalla modalita ANDROID APP [BLYNK]
+        go_motor(0, 0, battery_dati.VBatt); 
         MotorR_stop();     
         MotorL_stop();     
         app.cruise_soft_run_nohand = 0.0;
         app.stato = app_init;
         break;
       }
+
 
       app.ayn = (float)telemetry.joyy;
       app.axn = (float)telemetry.joyx;
@@ -356,6 +392,11 @@ float get_powerMax(float Vbattery){
   }
 }
 
+void accelleration_XY_Reset(void){
+  app.faccY = 0.0;
+  app.faccX = 0.0;
+}
+
 float accellerationY(float value){
   /* value -> -1000 0 +1000 */
   float tval;
@@ -490,27 +531,48 @@ float accellerationX(float value){
 
 
 // BATTERY TASK
-
+/*
 void Battery_TASK(void){
   if((HAL_GetTick() - battery_dati.time_batt)>200){
     battery_dati.time_batt = HAL_GetTick();
     
    battery_dati.somma_batt = battery_dati.somma_batt  + ADC_BATTERY();
    battery_dati.counter_media++;
-   if(battery_dati.counter_media >= 10){
+   if(battery_dati.counter_media >= 30){
     battery_dati.counter_media = 0;
       
       //Batteria media valore
-      battery_dati.VBatt = (float)battery_dati.somma_batt / 10.0;     
+      battery_dati.VBatt = (float)battery_dati.somma_batt / 30.0;     
       battery_dati.VBatt = battery_dati.VBatt * ADC_BATTERY_VOLT;
       
       battery_dati.somma_batt = 0;
    }
   }
 }
+*/
+
+//http://stackoverflow.com/questions/10990618/calculate-rolling-moving-average-in-c/10990656#10990656
+//ROLLING ACERAGE
+void Battery_TASK(void){
+  uint32_t temp32;
+  if((HAL_GetTick() - battery_dati.time_batt)>200){
+    battery_dati.time_batt = HAL_GetTick();
+
+    temp32 = battery_dati.somma_batt;
+    battery_dati.somma_batt -=  temp32 / 30.0;    
+    battery_dati.somma_batt += ADC_BATTERY() / 30.0;
+   
+      //Batteria media valore
+   battery_dati.VBatt = battery_dati.somma_batt * ADC_BATTERY_VOLT;
+   
+  }
+}
+
+
+
 
 // CURRENT MOTOR TASK
-
+/*
 void Current_Motor_TASK(void){
   if((HAL_GetTick() - app.Current_time_measure)>100){
     app.Current_time_measure = HAL_GetTick();
@@ -542,8 +604,41 @@ void Current_Motor_TASK(void){
    }
   }
 }
+*/
+//ROLLING ACERAGE
+void Current_Motor_TASK(void){
+  uint32_t temp32;
+  if((HAL_GetTick() - app.Current_time_measure)>100){
+    app.Current_time_measure = HAL_GetTick();
+   
+    temp32 = app.somma_current_m_L;
+    app.somma_current_m_L -=  temp32 / 5.0;    
+    app.somma_current_m_L += ADC_MOTOR_LEFT() / 5.0;
+   
+    temp32 = app.somma_current_m_R;
+    app.somma_current_m_R -=  temp32 / 5.0;   
+    app.somma_current_m_R += ADC_MOTOR_RIGHT() / 5.0;
+   
+   
 
-
+   //Current media valore
+    app.Current_M_LEFT = (float)app.somma_current_m_L;     
+    app.Current_M_RIGHT = (float)app.somma_current_m_R;     
+      
+    if(app.Current_M_RIGHT < ADC_MOTOR_R_CENTER){
+      app.Current_M_RIGHT = 0.0;
+    }else{
+      app.Current_M_RIGHT = ((app.Current_M_RIGHT  - ADC_MOTOR_R_CENTER) * MOTOR_R_AMP_CONV_AMP);
+    }
+    if(app.Current_M_LEFT < ADC_MOTOR_L_CENTER){
+      app.Current_M_LEFT = 0.0;
+    }else{
+      app.Current_M_LEFT = ((app.Current_M_LEFT  - ADC_MOTOR_L_CENTER) * MOTOR_L_AMP_CONV_AMP);
+    }
+      
+   
+  }
+}
 
 
 //  MOTOR
@@ -610,8 +705,47 @@ fPivScale = (abs(nJoyY)>fPivYLimit)? 0.0 : (1.0 - abs(nJoyY)/fPivYLimit);
 nMotMixL = (int)((1.0-fPivScale)*nMotPremixL + fPivScale*( nPivSpeed));
 nMotMixR = (int)((1.0-fPivScale)*nMotPremixR + fPivScale*(-nPivSpeed));
 
-app.motATS = nMotMixL;
-app.motBTS = nMotMixR;
+
+//Aggiungi Frizione!!!
+/*
+if(nMotMixL>0){
+  app.motATS = nMotMixL + FRICTION;
+}else if(nMotMixL<0){
+  app.motATS = nMotMixL - FRICTION;
+}else{
+  app.motATS = nMotMixL;
+}
+if(nMotMixR>0){
+  app.motBTS = nMotMixR + FRICTION;
+}else if(nMotMixR<0){
+  app.motBTS = nMotMixR - FRICTION;
+}else{
+  app.motBTS = nMotMixR;
+}
+*/
+
+if((nMotMixL>0)&&(nMotMixR>0)){
+  app.motATS = nMotMixL + FRICTION;
+  app.motBTS = nMotMixR + FRICTION;
+}else if ((nMotMixL<0)&&(nMotMixR<0)){
+  app.motATS = nMotMixL - FRICTION;
+  app.motBTS = nMotMixR - FRICTION;  
+}else{
+  if((nMotMixL>0)&&(nMotMixR<0)){
+    app.motATS = nMotMixL + FRICTION;
+    app.motBTS = nMotMixR - FRICTION + FRICTION/2;  
+  }else if((nMotMixL<0)&&(nMotMixR>0)){
+    app.motBTS = nMotMixR + FRICTION;  
+    app.motATS = nMotMixL - FRICTION  + FRICTION/2;
+  }else{
+    app.motATS = nMotMixL;
+    app.motBTS = nMotMixR;
+  }
+}
+
+
+//app.motATS = nMotMixL;
+//app.motBTS = nMotMixR;
 
       if(app.motATS >= 0){
         //0 ~ 100

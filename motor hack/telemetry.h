@@ -22,6 +22,7 @@
       
       //Public
        volatile __IO uint8_t dataREADY_JOYSTICK;
+       volatile __IO uint8_t dataLast_Command;
        volatile __IO int16_t joyx;
        volatile __IO int16_t joyy;
     };

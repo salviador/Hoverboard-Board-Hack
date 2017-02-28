@@ -7,6 +7,7 @@
    #include "stm32f1xx_hal.h"
 
    #define ACCELLERATION_CONSTANT   0.3;  //1;  //30; //0.1;
+   #define FRICTION 30
    
    enum APP_STATO {app_init, app_soft_run, app_soft_run_nohand, app_soft_ANDROIDAPP};
    
@@ -62,6 +63,7 @@
   float scale_x(float x, float Vbatt);
   float accellerationY(float value);
   float accellerationX(float value);
+  void accelleration_XY_Reset(void);
   void go_motor(float throttle, float steering, float Vbatt);
 
 

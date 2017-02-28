@@ -29,7 +29,8 @@ void Telemetry_init(void){
   telemetry.dataREADY_JOYSTICK = 0;
   telemetry.joyx = 0;
   telemetry.joyy = 0;
-  
+  telemetry.dataLast_Command = 0;
+    
   HAL_UART_Receive_DMA(&huart2, (uint8_t *)&uartDati.bUartRx[0], 100);
  
 }
@@ -118,12 +119,14 @@ void Telemetry_RX_parseData(uint8_t p_start_readBuffer, uint16_t size_readBuff){
           telemetry.statoRX = 1;
           telemetry.counterBufferRXTrama = 0;
             telemetry.TelemetryRX_TramaX[0] = 0;
-            telemetry.TelemetryRX_TramaY[0] = 0;               
+            telemetry.TelemetryRX_TramaY[0] = 0;          
+            telemetry.dataLast_Command = 'F';
         }else if(rxvalue=='R'){
           telemetry.statoRX = 1;      
           telemetry.counterBufferRXTrama = 0;
           telemetry.TelemetryRX_TramaX[0] = 0;
           telemetry.TelemetryRX_TramaY[0] = 0;               
+            telemetry.dataLast_Command = 'R';          
         }
       break;
       case 1:
@@ -134,6 +137,7 @@ void Telemetry_RX_parseData(uint8_t p_start_readBuffer, uint16_t size_readBuff){
           if(telemetry.counterBufferRXTrama>=5){
             //Error reset
             telemetry.statoRX = 0;
+            telemetry.dataLast_Command = 0;
           }                
         }else{
             telemetry.TelemetryRX_TramaX[telemetry.counterBufferRXTrama] = 0;            
@@ -149,6 +153,7 @@ void Telemetry_RX_parseData(uint8_t p_start_readBuffer, uint16_t size_readBuff){
           if(telemetry.counterBufferRXTrama>=5){
             //Error reset
             telemetry.statoRX = 0;
+            telemetry.dataLast_Command = 0;            
           }                
         }else{
             telemetry.TelemetryRX_TramaY[telemetry.counterBufferRXTrama] = 0;            

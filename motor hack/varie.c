@@ -2,6 +2,8 @@
 #include "stm32f1xx_hal.h"
 #include "delay.h"
 
+extern IWDG_HandleTypeDef hiwdg;
+
 void Buzzer_init(void){
   GPIO_InitTypeDef GPIO_InitStruct;
   __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -51,6 +53,7 @@ void Buzzer_OneBeep(void){
     Delay_us(160);
     Buzzer_Set(0);
     Delay_us(160);
+    HAL_IWDG_Refresh(&hiwdg);   //819mS    
   }
   Buzzer_Set(0); 
 }
@@ -61,6 +64,7 @@ void Buzzer_TwoBeep(void){
       Delay_us(160);     
       Buzzer_Set(0);
       Delay_us(160);      
+      HAL_IWDG_Refresh(&hiwdg);   //819mS     
     }
     Buzzer_Set(0);
     HAL_Delay(200);
@@ -73,6 +77,7 @@ void Buzzer_OneShortBeep(void){
     Delay_us(160);
     Buzzer_Set(0);
     Delay_us(160);
+    HAL_IWDG_Refresh(&hiwdg);   //819mS    
   }
   Buzzer_Set(0); 
 }
@@ -82,6 +87,7 @@ void Buzzer_OneLongBeep(void){
     Delay_us(160);
     Buzzer_Set(0);
     Delay_us(160);
+    HAL_IWDG_Refresh(&hiwdg);   //819mS
   }
   Buzzer_Set(0); 
 }
