@@ -91,9 +91,9 @@
 <text x="114.3" y="33.02" size="1.778" layer="97" rot="R90">GND</text>
 <text x="71.12" y="33.02" size="1.778" layer="97" rot="R90">+5Vcc</text>
 <text x="60.96" y="33.02" size="1.778" layer="97" rot="R90">GND</text>
-<text x="68.58" y="22.86" size="1.778" layer="97" rot="R90">PB5 A YELLOW</text>
+<text x="63.5" y="22.86" size="1.778" layer="97" rot="R90">PB7 A YELLOW</text>
 <text x="66.04" y="22.86" size="1.778" layer="97" rot="R90">PB6 B BLUE</text>
-<text x="63.5" y="22.86" size="1.778" layer="97" rot="R90">PB7 C GREEN</text>
+<text x="68.58" y="22.86" size="1.778" layer="97" rot="R90">PB5 C GREEN</text>
 <text x="45.72" y="30.48" size="1.778" layer="97" rot="R90">+15Vcc</text>
 <text x="48.26" y="33.02" size="1.778" layer="97" rot="R90">PA2</text>
 <text x="50.8" y="33.02" size="1.778" layer="97" rot="R90">PA3</text>
