@@ -6,7 +6,7 @@
 #endif 
    #include "stm32f1xx_hal.h"
 
-   #define ACCELLERATION_CONSTANT   0.3;  //1;  //30; //0.1;
+   #define ACCELLERATION_CONSTANT   0.35;  //1;  //30; //0.1;
    #define FRICTION 30
    
    enum APP_STATO {app_init, app_soft_run, app_soft_run_nohand, app_soft_ANDROIDAPP};
