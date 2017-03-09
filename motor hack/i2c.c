@@ -11,6 +11,8 @@ volatile __IO struct WII_JOYdati wii_JOYdati;
 void MX_I2C2_Init(void)
 {
   __HAL_RCC_I2C2_CLK_ENABLE();
+  __HAL_RCC_DMA1_CLK_ENABLE();
+  
   /* DMA1_Channel4_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 1, 4);
   HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
@@ -69,13 +71,12 @@ void WiiNunchuck_TASK(void){
       wii_JOYdati.I2CTxDone = 0;
       ai2cBuffer[0] = 0x00;
       HAL_I2C_Master_Transmit_DMA(&hi2c2, 0xA4, (uint8_t*)ai2cBuffer, 1);
-      wii_JOYdati.stato = 1;
+      wii_JOYdati.stato = 12;
       wii_JOYdati.mS = HAL_GetTick();
     break;
   
     case 1:
-      
-      if((HAL_GetTick() - wii_JOYdati.mS) >= 5){             
+      if((HAL_GetTick() - wii_JOYdati.mS) >= 7){             
         wii_JOYdati.I2CTxDone = 0;
         wii_JOYdati.I2CRxDone = 0;
         wii_JOYdati.I2CERROR = 0;
@@ -145,7 +146,9 @@ void WiiNunchuck_TASK(void){
         wii_JOYdati.I2CTxDone = 0;
         wii_JOYdati.I2CRxDone = 0;
         wii_JOYdati.I2CERROR = 0;
-        wii_JOYdati.stato = 0;
+        
+        wii_JOYdati.mS = HAL_GetTick();
+        wii_JOYdati.stato = 11;
       }
     break;
   
@@ -164,6 +167,20 @@ void WiiNunchuck_TASK(void){
         wii_JOYdati.I2CERROR = 0;
         wii_JOYdati.stato = 0;
       }
+    break;
+    
+    case 12:
+      if(HAL_I2C_GetState(&hi2c2) == HAL_I2C_STATE_READY){
+        wii_JOYdati.stato = 1;
+        wii_JOYdati.mS = HAL_GetTick();        
+      }            
+      if((HAL_GetTick() - wii_JOYdati.mS) >= 7){             
+        wii_JOYdati.I2CTxDone = 0;
+        wii_JOYdati.I2CRxDone = 0;
+        wii_JOYdati.I2CERROR = 0;
+        wii_JOYdati.stato = 11;
+        wii_JOYdati.mS = HAL_GetTick();        
+      }      
     break;
   
   }
