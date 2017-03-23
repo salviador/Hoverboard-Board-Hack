@@ -24,11 +24,19 @@ namespace wheel
         private ListView mListView;
         public DeviceAdapter adapterList;
         private ControllerView controller_view;
+        private TextView battery_textview;
+        private TextView current_mL_textview;
+        private TextView current_mR_textview;
 
         protected override void OnCreate(Bundle bundle)
         {
             base.OnCreate(bundle);
             SetContentView (Resource.Layout.Main);
+
+            Window.AddFlags(WindowManagerFlags.KeepScreenOn |
+               WindowManagerFlags.DismissKeyguard |
+               WindowManagerFlags.ShowWhenLocked |
+               WindowManagerFlags.TurnScreenOn);
 
             ble = new Bluetooth(this,this,this);
             ble.ScanResultEvent += Ble_ScanResultEvent;
@@ -59,8 +67,20 @@ namespace wheel
             }
         }
 
-        //Joystick
+        //BBluetooth callback Telemetry -> Battery , Current Motor
+        private void Blecallback_Telemetry_Event(float[] obj)
+        {
+             if((current_mL_textview != null)&&(current_mR_textview != null))
+            {
+                RunOnUiThread(() => {
+                    battery_textview.Text = obj[0].ToString("0.0");
+                    current_mL_textview.Text = obj[1].ToString("0.0");
+                    current_mR_textview.Text = obj[2].ToString("0.0");
+                });
+            }
+        }
 
+        //Joystick , callback dal joystick
         private void Controller_view__event(int x, int y)
         {
             Console.WriteLine("x:" + x);
@@ -83,9 +103,12 @@ namespace wheel
                 byte[] value = new byte[2];
                 value[0] = intBytesx[0];
                 value[1] = intBytesy[0];
-                ble.blecallback._characteristicJOY.SetValue(value);
-                bool status = ble.blecallback._blegattjoy.WriteCharacteristic(ble.blecallback._characteristicJOY);
 
+                if (ble.blecallback.ble_ready)
+                {
+                    ble.blecallback._characteristicJOY.SetValue(value);
+                    bool status = ble.blecallback._blegattjoy.WriteCharacteristic(ble.blecallback._characteristicJOY);
+                }
             }
         }
 
@@ -93,7 +116,7 @@ namespace wheel
         protected override void OnActivityResult(int requestCode, Result resultCode, Intent data)
         {
             base.OnActivityResult(requestCode, resultCode, data);
-            if (requestCode == 2)
+            if (resultCode == Result.Ok)
             {
                 ble.Scanner();
             }
@@ -122,7 +145,34 @@ namespace wheel
             controller_view = FindViewById<ControllerView>(Resource.Id.controllerView1);
             controller_view._event += Controller_view__event;
 
-            ble.Connetti(ble.mLeDevices[e.Position]);
+            battery_textview = FindViewById<TextView>(Resource.Id.textBatt);
+            current_mL_textview = FindViewById<TextView>(Resource.Id.CurrentLeft);
+            current_mR_textview = FindViewById<TextView>(Resource.Id.CurrentRight);
+
+            if (ble.mLeDevices[e.Position].Name == "Wheel")
+            {
+                ble.Connetti(ble.mLeDevices[e.Position]);
+
+                ble.blecallback.Telemetry_Event += Blecallback_Telemetry_Event;
+            }
+            else
+            {
+                Handler mHandler = new Handler();
+                mHandler.PostDelayed(new Action(delegate {
+                    Finish();
+                }), 2000);
+                Toast.MakeText(this, "Device Not supported", ToastLength.Short).Show();
+            }
+        }
+
+        protected override void OnStop()
+        {
+            base.OnStop();
+
+            ble.Disconnetti();
+            SetContentView(Resource.Layout.Main);
+
+            if(controller_view != null) controller_view._event -= Controller_view__event;
         }
 
 

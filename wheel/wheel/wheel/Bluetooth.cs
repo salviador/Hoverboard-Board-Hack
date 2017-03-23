@@ -79,24 +79,36 @@ namespace wheel
             blecallback = new BGattCallback();
             device.ConnectGatt(context, false, blecallback);
         }
+
+        public void Disconnetti()
+        {
+            if (blecallback != null)
+            {
+                blecallback._blegattjoy.Close(); ;
+                blecallback._blegattjoy.Disconnect();
+            }
+        }
     }
 
     public class BGattCallback : BluetoothGattCallback
     {
-        private static String DEVICE_SERVICE_UUID = "19B10010-E8F2-537E-4F6C-D11476EA1218";
-        private static String JOY_CHARACTERISTIC_CONFIG = "19B11E01-E8F2-537E-4F6C-D104768A1214";
-        private static String BATTERY_CHARACTERISTIC_CONFIG = "19B11E02-E8F2-537E-4F6C-D104768A1214";
-        private static String CURRENT_CHARACTERISTIC_CONFIG = "19B11E03-E8F2-537E-4F6C-D104768A1214";
-        public static String CLIENT_UUID = "00002902-0000-1000-8000-00805f9b34fb";
+        public event Action<float[]> Telemetry_Event;
 
-        private UUID Battery_UUID;
+        public static String DEVICE_SERVICE_UUID = "19B10010-E8F2-537E-4F6C-D11476EA1218";
+        public static String JOY_CHARACTERISTIC_CONFIG = "19B11E01-E8F2-537E-4F6C-D104768A1214";
+        public static String TELEMETRY_CHARACTERISTIC_CONFIG = "19B11E02-E8F2-537E-4F6C-D104768A1214";
+        public  String CLIENT_UUID = "00002902-0000-1000-8000-00805f9b34fb";
+
+        private UUID JOY_UUID;
+        public UUID Telemetry_UUID;
 
         public BluetoothGattCharacteristic _characteristicJOY;
         public BluetoothGatt _blegattjoy;
 
         public BGattCallback()
         {
-            Battery_UUID = UUID.FromString(BATTERY_CHARACTERISTIC_CONFIG);
+            Telemetry_UUID = UUID.FromString(TELEMETRY_CHARACTERISTIC_CONFIG);
+            JOY_UUID = UUID.FromString(JOY_CHARACTERISTIC_CONFIG);
         }
         public override void OnConnectionStateChange(BluetoothGatt gatt, GattStatus status, ProfileState newState)
         {
@@ -115,47 +127,58 @@ namespace wheel
             }
         }
 
+        public bool ble_ready = false;
+
         public override void OnServicesDiscovered(BluetoothGatt gatt, GattStatus status)
         {
             base.OnServicesDiscovered(gatt, status);
 
             if (status == GattStatus.Success)
-            {
+            { 
 
-                BluetoothGattService service = gatt.GetService(UUID.FromString(DEVICE_SERVICE_UUID));
-
-                if (service == null)
-                {
-                }
-                else
-                {
-                    BluetoothGattCharacteristic characteristicLJOY = service.GetCharacteristic(UUID.FromString(JOY_CHARACTERISTIC_CONFIG));
-                    BluetoothGattCharacteristic characteristicLBATT = service.GetCharacteristic(UUID.FromString(BATTERY_CHARACTERISTIC_CONFIG));
-                    BluetoothGattCharacteristic characteristicLCURRENT = service.GetCharacteristic(UUID.FromString(CURRENT_CHARACTERISTIC_CONFIG));
-                    _characteristicJOY = characteristicLJOY;
-                    _blegattjoy = gatt;
-
-                    if (!gatt.SetCharacteristicNotification(characteristicLBATT, true))
+                foreach (BluetoothGattService service in gatt.Services) {
+                    foreach (BluetoothGattCharacteristic characteristic in service.Characteristics)
                     {
-                        Console.WriteLine("Couldn't set notifications for RX characteristic!");
-                    }
 
-                    if (characteristicLBATT.GetDescriptor(UUID.FromString(CLIENT_UUID)) != null)
-                    {
-                        BluetoothGattDescriptor desc = characteristicLBATT.GetDescriptor(UUID.FromString(CLIENT_UUID));
-                        desc.SetValue(BluetoothGattDescriptor.EnableNotificationValue.ToArray<Byte>());
-                        if (!gatt.WriteDescriptor(desc))
-                        {
-                            Console.WriteLine("Couldn't write RX client descriptor value!");
+                            if (characteristic.Uuid.Equals(JOY_UUID))
+                            {
+                                BluetoothGattCharacteristic characteristicLJOY = characteristic;
+                                _characteristicJOY = characteristicLJOY;
+                                _blegattjoy = gatt;
+                            }else  if (characteristic.Uuid.Equals(Telemetry_UUID))
+                            {
+                                BluetoothGattCharacteristic characteristicLTELEMETRY = characteristic;
+                                if (!gatt.SetCharacteristicNotification(characteristicLTELEMETRY, true))
+                                {
+                                    Console.WriteLine("Couldn't set notifications for RX characteristic!");
+                                }
+
+                                if (characteristicLTELEMETRY.GetDescriptor(UUID.FromString(CLIENT_UUID)) != null)
+                                {
+                                    BluetoothGattDescriptor desc = characteristicLTELEMETRY.GetDescriptor(UUID.FromString(CLIENT_UUID));
+                                    desc.SetValue(BluetoothGattDescriptor.EnableIndicationValue.ToArray<Byte>());
+
+                                    if (!gatt.WriteDescriptor(desc))
+                                    {
+                                        Console.WriteLine("Couldn't write RX client descriptor value!");
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("");
+                                    }
+
+                                }
+                            }
                         }
-                        else {
-                            Console.WriteLine("");
-                        }
-                    }
-
-
                 }
             }
+        }
+
+   
+        public override void OnDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, GattStatus status)
+        {
+            base.OnDescriptorWrite(gatt, descriptor, status);
+            ble_ready = true;
         }
         public override void OnDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, GattStatus status)
         {
@@ -175,17 +198,19 @@ namespace wheel
         {
             base.OnCharacteristicChanged(gatt, characteristic);
 
-            //Console.WriteLine("OnCharacteristicChanged: " + characteristic.GetStringValue(0));
             byte[] br = characteristic.GetValue();
 
-            float myFloat = System.BitConverter.ToSingle(br, 0);
-            //  Console.WriteLine("^^^^^^^^^^^^^OnCharacteristicChanged^^^^^^^^^^^^^: " + br.ToString());
-
-            if (Battery_UUID.Equals(characteristic.Uuid))
+            if (Telemetry_UUID.Equals(characteristic.Uuid))
             {
-                Log.Info("BLE", "Received new value for BATTERY.");
+                if (Telemetry_Event != null)
+                {
+                    float[] myFloat = new float[3];
+                    myFloat[0] = System.BitConverter.ToSingle(br, 0);
+                    myFloat[1] = System.BitConverter.ToSingle(br, 4);
+                    myFloat[2] = System.BitConverter.ToSingle(br, 8);
+                    Telemetry_Event(myFloat);
+                }
             }
-
         }
 
     }
