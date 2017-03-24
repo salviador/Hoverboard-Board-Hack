@@ -135,9 +135,9 @@ if((blePeripheral.connected())&&((millis()-timeTEMP)>1)){
   if((blePeripheral.connected())&&((millis()-timeTrasmitt)>50)){
     timeTrasmitt = millis();
     mySerial.print("R");
-    mySerial.print(x);
+    mySerial.print(JOYSTICKBLE[0]);
     mySerial.print(";");
-    mySerial.print(y);
+    mySerial.print(JOYSTICKBLE[1]);
     mySerial.print('\n');
     counterTXfree=0;
 
