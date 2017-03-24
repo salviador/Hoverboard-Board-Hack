@@ -29,10 +29,14 @@ byte JOYSTICKBLE[2];
 
 typedef union
 {
- float number;
- uint8_t bytes[4];
-} FLOATUNION_t;
-FLOATUNION_t myFloat;
+    struct{
+      float Battery;
+      float numberL;
+      float numberR;
+    };
+ uint8_t bytes[12];
+} FLOATUNION2_t;
+FLOATUNION2_t myFloat;
    
 unsigned long timeTrasmitt;
 int x;
@@ -42,28 +46,19 @@ int icountrx;
 unsigned int i;
 int stato_rx;
 int incomingByte = 0;
-String MOTOR_LEFT_STRINGtemp;
-String MOTOR_RIGHT_STRINGtemp;
-String BATT_STRINGtemp;
-char MOTOR_LEFT_STRING[20];
-char MOTOR_RIGHT_STRING[20];
-char BATT_STRING[20];
 char tMOTOR_LEFT_STRING[20];
 char tMOTOR_RIGHT_STRING[20];
 char tBATT_STRING[20];
 
-
-unsigned long timeTEMP;
-
-
+char Telemetry_ready_to_tx;
+  
 BLEPeripheral blePeripheral; // create peripheral instance
 BLEService wheelService("19B10010-E8F2-537E-4F6C-D11476EA1218"); // create service
 
 // create switch characteristic and allow remote device to read and write
 BLECharacteristic joysteickCharacteristic("19B11E01-E8F2-537E-4F6C-D104768A1214", BLERead | BLEWrite,2);
 // create button characteristic and allow remote device to get notifications
-BLECharacteristic BatteryCharacteristic("19B11E02-E8F2-537E-4F6C-D104768A1214", BLERead | BLENotify, 4); // allows remote device to get notifications
-BLECharCharacteristic MotorCurrentCharacteristic("19B11E03-E8F2-537E-4F6C-D104768A1214", BLERead | BLENotify); // allows remote device to get notifications
+BLECharacteristic TelemetryCharacteristic("19B11E02-E8F2-537E-4F6C-D104768A1214", BLERead | BLENotify, 12); // allows remote device to get notifications
 
 
 void setup() {
@@ -81,15 +76,15 @@ void setup() {
   // add service and characteristics
   blePeripheral.addAttribute(wheelService);
   blePeripheral.addAttribute(joysteickCharacteristic);
-  blePeripheral.addAttribute(BatteryCharacteristic);
-  blePeripheral.addAttribute(MotorCurrentCharacteristic);
+  blePeripheral.addAttribute(TelemetryCharacteristic);
 
-  JOYSTICKBLE[0] = 0;
-  JOYSTICKBLE[1] = 0;
+  JOYSTICKBLE[0] = 75;
+  JOYSTICKBLE[1] = 75;
   joysteickCharacteristic.setValue(JOYSTICKBLE,2);
-  myFloat.number = 0.0;
-  BatteryCharacteristic.setValue(myFloat.bytes,4);
-  MotorCurrentCharacteristic.setValue(0);
+  myFloat.Battery = 0.0;
+  myFloat.numberL = 0.0;
+  myFloat.numberR = 0.0;  
+  TelemetryCharacteristic.setValue(myFloat.bytes,12);
 
   blePeripheral.begin();
     
@@ -97,27 +92,38 @@ void setup() {
   x=0;
   y=0;
   stato_rx=0;
-  BATT_STRING[0] = 0x00;
-  MOTOR_LEFT_STRING[0] = 0x00;
-  MOTOR_RIGHT_STRING[0] = 0x00;
 
   counterTXfree=0;
   icountrx = 0;
 
- Serial.println("RUN");
+  Telemetry_ready_to_tx = 0;
+
+  Serial.println("RUN");
  }
 
 
 void loop() {
   blePeripheral.poll();
-
-//test battery --------------------------
-if((blePeripheral.connected())&&((millis()-timeTEMP)>3000)){
+/*
+//test battery --------------------------********************************************************************
+if((blePeripheral.connected())&&((millis()-timeTEMP)>1)){
   timeTEMP = millis();
-myFloat.number = 123.456; 
-  BatteryCharacteristic.setValue(myFloat.bytes,4);
-}
 
+  int randNumber = random(10,50);
+  float y = random(0, 99) / 100.0;     
+  myFloat.Battery = (float)randNumber + (float)y;
+
+  randNumber = random(10,50);
+  y = random(0, 99) / 100.0;
+  myFloat.numberL = (float)randNumber + (float)y; 
+  
+  randNumber = random(10,50);
+  y = random(0, 99) / 100.0;
+  myFloat.numberR = (float)randNumber + (float)y;  
+  
+  TelemetryCharacteristic.setValue(myFloat.bytes,12);  
+}
+*/
   
 
   if(joysteickCharacteristic.written()) {
@@ -135,12 +141,12 @@ myFloat.number = 123.456;
     mySerial.print('\n');
     counterTXfree=0;
 
-
+/*
    Serial.print("JOY->RX: ");
    Serial.print(JOYSTICKBLE[0],DEC);
    Serial.print(" ; ");
    Serial.println(JOYSTICKBLE[1],DEC);
-    
+*/    
   }
   if((blePeripheral.connected()==0)&&((millis()-timeTrasmitt)>50)){
     if(counterTXfree<3){
@@ -224,26 +230,32 @@ myFloat.number = 123.456;
                 Serial.print(" ; ");
                 Serial.println(tMOTOR_RIGHT_STRING);
 */
-
-              for(i=0;i<sizeof(tBATT_STRING);i++){
-                BATT_STRING[i] = tBATT_STRING[i];
-              }
-              for(i=0;i<sizeof(tMOTOR_LEFT_STRING);i++){
-                MOTOR_LEFT_STRING[i] = tMOTOR_LEFT_STRING[i];
-              }
-              for(i=0;i<sizeof(tMOTOR_RIGHT_STRING);i++){
-                MOTOR_RIGHT_STRING[i] = tMOTOR_RIGHT_STRING[i];
-              }
-
+              Telemetry_ready_to_tx = 1;
 
              }
         break;   
       }
-
-
-
-    
   }
+
+
+//Telemetry_ready_to_tx = 1;
+  //Trasmetti Telemetria
+  if((blePeripheral.connected())&&(Telemetry_ready_to_tx == 1)){
+    Telemetry_ready_to_tx = 0;
+
+
+  /*  sprintf(tBATT_STRING,"%.1f",12.47);
+    sprintf(tMOTOR_LEFT_STRING,"%.1f",0.98);
+    sprintf(tMOTOR_RIGHT_STRING,"%.1f",0.72);
+  */
+    myFloat.Battery = atof(tBATT_STRING);
+    myFloat.numberL = atof(tMOTOR_LEFT_STRING); 
+    myFloat.numberR = atof(tMOTOR_RIGHT_STRING);  
+    TelemetryCharacteristic.setValue(myFloat.bytes,12);  
+  }
+  
+  
+  
 
 
 

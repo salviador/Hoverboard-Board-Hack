@@ -83,19 +83,20 @@ namespace wheel
         //Joystick , callback dal joystick
         private void Controller_view__event(int x, int y)
         {
-            Console.WriteLine("x:" + x);
-            Console.WriteLine("y:" + y);
+            //Log.Info("-JOYSTICK-","x:" + x + " ; y:" + y);  // -160; +160
             if (ble.blecallback._blegattjoy != null) {
                 //STATE
-                //scale 0-200 
+                //scale 0-320 
                 int xs = x + 160;
                 int ys = y + 160;
                 if (xs < 0) xs = 0;
                 if (ys < 0) ys = 0;
                 if (xs > 320) xs = 320;
                 if (ys > 320) ys = 320;
-                xs = (int)((float)xs * 0.625);
-                ys = (int)((float)ys * 0.625);
+                ys = 320 - ys;
+                //scale 0 - 150
+                xs = (int)((float)xs * 0.46875);
+                ys = (int)((float)ys * 0.46875);
 
                 byte[] intBytesx = BitConverter.GetBytes(xs);
                 byte[] intBytesy = BitConverter.GetBytes(ys);

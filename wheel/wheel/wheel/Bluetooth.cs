@@ -80,10 +80,23 @@ namespace wheel
             device.ConnectGatt(context, false, blecallback);
         }
 
+
         public void Disconnetti()
         {
             if (blecallback != null)
             {
+                blecallback._blegattjoy.SetCharacteristicNotification(blecallback._characteristicLTELEMETRY, false);
+
+                if (blecallback._characteristicLTELEMETRY.GetDescriptor(UUID.FromString(blecallback.CLIENT_UUID)) != null)
+                {
+                    BluetoothGattDescriptor desc = blecallback._characteristicLTELEMETRY.GetDescriptor(UUID.FromString(blecallback.CLIENT_UUID));
+                    desc.SetValue(BluetoothGattDescriptor.DisableNotificationValue.ToArray<Byte>());
+
+                    if (!blecallback._blegattjoy.WriteDescriptor(desc))
+                    {
+
+                    }
+                }
                 blecallback._blegattjoy.Close(); ;
                 blecallback._blegattjoy.Disconnect();
             }
@@ -104,6 +117,7 @@ namespace wheel
 
         public BluetoothGattCharacteristic _characteristicJOY;
         public BluetoothGatt _blegattjoy;
+        public BluetoothGattCharacteristic _characteristicLTELEMETRY;
 
         public BGattCallback()
         {
@@ -148,17 +162,17 @@ namespace wheel
                             }else  if (characteristic.Uuid.Equals(Telemetry_UUID))
                             {
                                 BluetoothGattCharacteristic characteristicLTELEMETRY = characteristic;
-                                if (!gatt.SetCharacteristicNotification(characteristicLTELEMETRY, true))
-                                {
-                                    Console.WriteLine("Couldn't set notifications for RX characteristic!");
-                                }
+                                _characteristicLTELEMETRY = characteristicLTELEMETRY;
+
+
+
 
                                 if (characteristicLTELEMETRY.GetDescriptor(UUID.FromString(CLIENT_UUID)) != null)
                                 {
                                     BluetoothGattDescriptor desc = characteristicLTELEMETRY.GetDescriptor(UUID.FromString(CLIENT_UUID));
-                                    desc.SetValue(BluetoothGattDescriptor.EnableIndicationValue.ToArray<Byte>());
+                                    desc.SetValue(BluetoothGattDescriptor.EnableNotificationValue.ToArray<Byte>());
 
-                                    if (!gatt.WriteDescriptor(desc))
+                                if (!gatt.WriteDescriptor(desc))
                                     {
                                         Console.WriteLine("Couldn't write RX client descriptor value!");
                                     }
@@ -168,8 +182,16 @@ namespace wheel
                                     }
 
                                 }
+                            if (!gatt.SetCharacteristicNotification(characteristicLTELEMETRY, true))
+                            {
+                                Console.WriteLine("Couldn't set notifications for RX characteristic!");
                             }
+
+
+
+
                         }
+                    }
                 }
             }
         }
