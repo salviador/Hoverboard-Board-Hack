@@ -74,8 +74,8 @@ namespace wheel
             {
                 RunOnUiThread(() => {
                     battery_textview.Text = obj[0].ToString("0.0");
-                    current_mL_textview.Text = obj[1].ToString("0.0");
-                    current_mR_textview.Text = obj[2].ToString("0.0");
+                    current_mL_textview.Text = obj[2].ToString("0.0");
+                    current_mR_textview.Text = obj[1].ToString("0.0");
                 });
             }
         }
