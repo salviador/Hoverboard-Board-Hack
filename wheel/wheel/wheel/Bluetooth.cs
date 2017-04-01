@@ -18,7 +18,8 @@ using Java.Util;
 
 namespace wheel
 {
-    public class Bluetooth : ScanCallback 
+
+    public class BluetoothScanner : ScanCallback
     {
         public event Action<List<BluetoothDevice>> ScanResultEvent;
 
@@ -30,27 +31,22 @@ namespace wheel
         public BluetoothAdapter mBluetoothAdapter;
         public BluetoothManager bluetoothManager;
         public BluetoothLeScanner bluetoothLeScanner;
-        public BGattCallback blecallback;
 
-        BondStatusBroadcastReceiver myReceiver; //for bond
-
-
-        static readonly long SCAN_PERIOD = 10000;
         private bool mScanning = false;
 
-        public Bluetooth(Context context, Activity activity, MainActivity mainActivity) {
+        public BluetoothScanner(Context context, Activity activity, MainActivity mainActivity) {
             this.context = context;
             this.activity = activity;
             this.mainActivity = mainActivity;
             mLeDevices = new List<BluetoothDevice>();
             bluetoothManager = (BluetoothManager)context.GetSystemService(Context.BluetoothService);
             mBluetoothAdapter = bluetoothManager.Adapter;
-
         }
 
         public void Scanner() {
             bluetoothLeScanner = mBluetoothAdapter.BluetoothLeScanner;
             mScanning = true;
+            /*
             Handler mHandler = new Handler();
             mHandler.PostDelayed(new Action(delegate {
                 mScanning = false;
@@ -59,7 +55,26 @@ namespace wheel
                     ScanResultEvent(mLeDevices);
                 }
             }), SCAN_PERIOD);
+            */
             bluetoothLeScanner.StartScan(this);
+        }
+        public void StopScanner()
+        {
+            bluetoothLeScanner = mBluetoothAdapter.BluetoothLeScanner;
+            if (mScanning) {
+                bluetoothLeScanner.StopScan(this);
+            }
+            mScanning = false;
+            /*
+            Handler mHandler = new Handler();
+            mHandler.PostDelayed(new Action(delegate {
+                mScanning = false;
+                bluetoothLeScanner.StopScan(this);
+                if (ScanResultEvent != null) {
+                    ScanResultEvent(mLeDevices);
+                }
+            }), SCAN_PERIOD);
+            */
         }
 
         public override void OnScanResult(ScanCallbackType callbackType, ScanResult result)
@@ -79,36 +94,48 @@ namespace wheel
                 mainActivity.adapterList.NotifyDataSetChanged();
             }
         }
-
-        public void Connetti(BluetoothDevice device) {
-            blecallback = new BGattCallback();
-
-
-            //  var bondStatusBroadcastReceiver = new BondStatusBroadcastReceiver();
-            //  context.RegisterReceiver(bondStatusBroadcastReceiver, new IntentFilter(BluetoothDevice.ActionBondStateChanged));
-
-            /*
-            Android.Bluetooth.Bond b = device.BondState;
-            device.SetPairingConfirmation(true);
-
-            
-            string Pin = "123456"; // "default";
-            byte[] PinBytes = Encoding.ASCII.GetBytes(Pin);
-
-            device.SetPin(PinBytes);
-            */
+    }
 
 
 
+    public class BluetoothConnessione : BluetoothGattCallback
+    {
+        Context context;
+        Activity activity;
+        MainActivity mainActivity;
+
+        public event Action<List<BluetoothServiceDevice>> Discovered_Event;
+        public event Action<BluetoothGatt, BluetoothGattCharacteristic> BLE_Event_Char_Callback;
+        public event Action<bool> Notification_Event;
+        public event Action Errore_Password_Event;
+
+        public List<BluetoothServiceDevice> storeService;
+        private BondStatusBroadcastReceiver myReceiver; //for bond
+
+        public AutoResetEvent WaitCharRecive = new AutoResetEvent(false);
+
+        public BluetoothConnessione(Context context, Activity activity, MainActivity mainActivity)
+        {
+            this.context = context;
+            this.activity = activity;
+            this.mainActivity = mainActivity;
+
+            storeService = new List<BluetoothServiceDevice>();
+            WaitCharRecive.Reset();
+        }
+
+        public void Connetti(BluetoothDevice device)
+        {
             Android.Bluetooth.Bond b = device.BondState;
             if (b == Bond.Bonded)
             {
-                device.ConnectGatt(context, false, blecallback);
+                device.ConnectGatt(context, false, this);
             }
             else
             {
                 this.myReceiver = new BondStatusBroadcastReceiver();
                 this.myReceiver.Bounded_ConnectDevice_Event += this.MyReceiver_Bounded_ConnectDevice_Event;
+                this.myReceiver.Bounded_ConnectDevice_Event_ERROR += this.MyReceiver_Bounded_ConnectDevice_Event_ERROR;
 
                 IntentFilter intentFilter = new IntentFilter(BluetoothDevice.ActionFound);
                 intentFilter.AddAction(BluetoothDevice.ActionBondStateChanged);
@@ -116,59 +143,23 @@ namespace wheel
 
                 device.CreateBond();
             }
-
         }
+
+        //Erorre password al device Bond (paired)
+        private void MyReceiver_Bounded_ConnectDevice_Event_ERROR()
+        {
+            if (this.Errore_Password_Event != null) {
+                this.Errore_Password_Event();
+            }
+        }
+
         //Connetti da device Bond (paired)
         private void MyReceiver_Bounded_ConnectDevice_Event(BluetoothDevice obj)
         {
-            obj.ConnectGatt(context, false, blecallback);
+            obj.ConnectGatt(context, false, this);
         }
 
 
-
-        public void Disconnetti()
-        {
-            if (blecallback != null)
-            {
-                blecallback._blegattjoy.SetCharacteristicNotification(blecallback._characteristicLTELEMETRY, false);
-
-                if (blecallback._characteristicLTELEMETRY.GetDescriptor(UUID.FromString(blecallback.CLIENT_UUID)) != null)
-                {
-                    BluetoothGattDescriptor desc = blecallback._characteristicLTELEMETRY.GetDescriptor(UUID.FromString(blecallback.CLIENT_UUID));
-                    desc.SetValue(BluetoothGattDescriptor.DisableNotificationValue.ToArray<Byte>());
-
-                    if (!blecallback._blegattjoy.WriteDescriptor(desc))
-                    {
-
-                    }
-                }
-                blecallback._blegattjoy.Close(); ;
-                blecallback._blegattjoy.Disconnect();
-            }
-        }
-    }
-
-    public class BGattCallback : BluetoothGattCallback
-    {
-        public event Action<float[]> Telemetry_Event;
-
-        public static String DEVICE_SERVICE_UUID = "19B10010-E8F2-537E-4F6C-D11476EA1218";
-        public static String JOY_CHARACTERISTIC_CONFIG = "19B11E01-E8F2-537E-4F6C-D104768A1214";
-        public static String TELEMETRY_CHARACTERISTIC_CONFIG = "19B11E02-E8F2-537E-4F6C-D104768A1214";
-        public  String CLIENT_UUID = "00002902-0000-1000-8000-00805f9b34fb";
-
-        private UUID JOY_UUID;
-        public UUID Telemetry_UUID;
-
-        public BluetoothGattCharacteristic _characteristicJOY;
-        public BluetoothGatt _blegattjoy;
-        public BluetoothGattCharacteristic _characteristicLTELEMETRY;
-
-        public BGattCallback()
-        {
-            Telemetry_UUID = UUID.FromString(TELEMETRY_CHARACTERISTIC_CONFIG);
-            JOY_UUID = UUID.FromString(JOY_CHARACTERISTIC_CONFIG);
-        }
         public override void OnConnectionStateChange(BluetoothGatt gatt, GattStatus status, ProfileState newState)
         {
             Console.WriteLine("OnConnectionStateChange: ");
@@ -178,125 +169,103 @@ namespace wheel
             {
                 case ProfileState.Connected:
                     gatt.DiscoverServices();
-                    _blegattjoy = gatt;
                     break;
                 case ProfileState.Disconnected:
-                    _blegattjoy = null;
                     break;
             }
         }
-
-        public bool ble_ready = false;
 
         public override void OnServicesDiscovered(BluetoothGatt gatt, GattStatus status)
         {
             base.OnServicesDiscovered(gatt, status);
 
             if (status == GattStatus.Success)
-            { 
+            {
 
                 foreach (BluetoothGattService service in gatt.Services) {
                     foreach (BluetoothGattCharacteristic characteristic in service.Characteristics)
                     {
-
-                        if (characteristic.Uuid.Equals(JOY_UUID))
-                        {
-                            BluetoothGattCharacteristic characteristicLJOY = characteristic;
-                            _characteristicJOY = characteristicLJOY;
-                            _blegattjoy = gatt;
-                        }
-                        else if (characteristic.Uuid.Equals(Telemetry_UUID))
-                        {
-                            BluetoothGattCharacteristic characteristicLTELEMETRY = characteristic;
-                            _characteristicLTELEMETRY = characteristicLTELEMETRY;
-
-
-
-
-                            if (characteristicLTELEMETRY.GetDescriptor(UUID.FromString(CLIENT_UUID)) != null)
-                            {
-                                BluetoothGattDescriptor desc = characteristicLTELEMETRY.GetDescriptor(UUID.FromString(CLIENT_UUID));
-                                desc.SetValue(BluetoothGattDescriptor.EnableNotificationValue.ToArray<Byte>());
-
-                                if (!gatt.WriteDescriptor(desc))
-                                {
-                                    Console.WriteLine("Couldn't write RX client descriptor value!");
-                                }
-                                else
-                                {
-                                    Console.WriteLine("");
-                                }
-
-                            }
-                            if (!gatt.SetCharacteristicNotification(characteristicLTELEMETRY, true))
-                            {
-                                Console.WriteLine("Couldn't set notifications for RX characteristic!");
-                            }
-
-
-
-
-                        }
-                        else {
-                            //Characteristic  Sconosciuto
-                            Console.WriteLine(characteristic.Uuid.ToString());
-
-
-                        }
-
+                        BluetoothServiceDevice b = new BluetoothServiceDevice();
+                        b.service = service;
+                        b.characteristic = characteristic;
+                        b.gatt = gatt;
+                        storeService.Add(b);
                     }
+                }
+                if (this.Discovered_Event != null) {
+                    this.Discovered_Event(storeService);
                 }
             }
         }
-
-   
         public override void OnDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, GattStatus status)
         {
             base.OnDescriptorWrite(gatt, descriptor, status);
-            ble_ready = true;
+            //ble_ready = true;
+            WaitCharRecive.Set();
         }
         public override void OnDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, GattStatus status)
         {
             base.OnDescriptorRead(gatt, descriptor, status);
-
-            Console.WriteLine("OnDescriptorRead: " + descriptor.ToString());
         }
 
         public override void OnCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, GattStatus status)
         {
             base.OnCharacteristicRead(gatt, characteristic, status);
-
-            Console.WriteLine("OnCharacteristicRead: " + characteristic.GetStringValue(0));
         }
 
         public override void OnCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic)
         {
             base.OnCharacteristicChanged(gatt, characteristic);
 
-            byte[] br = characteristic.GetValue();
-
-            if (Telemetry_UUID.Equals(characteristic.Uuid))
+            if (BLE_Event_Char_Callback != null)
             {
-                if (Telemetry_Event != null)
-                {
-                    float[] myFloat = new float[3];
-                    myFloat[0] = System.BitConverter.ToSingle(br, 0);
-                    myFloat[1] = System.BitConverter.ToSingle(br, 4);
-                    myFloat[2] = System.BitConverter.ToSingle(br, 8);
-                    Telemetry_Event(myFloat);
-                }
+                BLE_Event_Char_Callback(gatt, characteristic);
             }
+        }
+
+
+        public void SetCharacteristicNotification(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, string UUIDClient)
+        {
+            //Servizi trovati e compatibili
+            //Attiva richiesta notifiche
+            Thread thread = new Thread(new ThreadStart(() =>
+            {
+                bool notificationState = false;
+
+                for (int i = 0; i < 3; i++)
+                {
+                    BluetoothGattDescriptor desc = characteristic.GetDescriptor(UUID.FromString(UUIDClient));
+                    desc.SetValue(BluetoothGattDescriptor.EnableNotificationValue.ToArray<Byte>());
+                    gatt.WriteDescriptor(desc);
+                    gatt.SetCharacteristicNotification(characteristic, true);
+
+                    if (WaitCharRecive.WaitOne(5000))
+                    {
+                        notificationState = true;
+                        if (Notification_Event != null) {
+                            Notification_Event(true);
+                        }
+                        break;
+                    }
+                }
+                if (notificationState == false)
+                {
+                    if (Notification_Event != null)
+                    {
+                        Notification_Event(false);
+                    }
+                }
+            }));
+            thread.Start();
         }
 
     }
 
-
-
-
-
+    //For pairing
     public class BondStatusBroadcastReceiver : BroadcastReceiver
     {
         public event Action<BluetoothDevice> Bounded_ConnectDevice_Event;
+        public event Action Bounded_ConnectDevice_Event_ERROR;
 
         public override void OnReceive(Context context, Intent intent)
         {
@@ -309,14 +278,17 @@ namespace wheel
                 if (device.BondState == Bond.Bonded)
                 {
                     // CONNECT
-                    Console.WriteLine("CONNECT");
+                    //Console.WriteLine("CONNECT");
                     if (this.Bounded_ConnectDevice_Event != null)
                     {
                         this.Bounded_ConnectDevice_Event(device);
                     }
                 }
                 else if (device.BondState == Bond.None) {
-                    Console.WriteLine("Errata password!!");
+                    //Console.WriteLine("Errata password!!");
+                    if (this.Bounded_ConnectDevice_Event_ERROR != null) {
+                        this.Bounded_ConnectDevice_Event_ERROR();
+                    }
                 }
             }
             else if (BluetoothDevice.ActionFound.Equals(action))
@@ -324,14 +296,6 @@ namespace wheel
                 BluetoothDevice device = (BluetoothDevice)intent.GetParcelableExtra(BluetoothDevice.ExtraDevice);
                 // Discover new device
                 Console.WriteLine("Discover new device");
-
-/*
-
-                device.SetPairingConfirmation(false);
-                device.SetPin(Encoding.UTF7.GetBytes("123456"));
-                bool res = device.CreateBond();
-*/
-
             }
 
         }
@@ -340,6 +304,12 @@ namespace wheel
 
 
 
+    public class BluetoothServiceDevice
+    {
+        public BluetoothGattService service { get; set; }
+        public BluetoothGatt gatt { get; set; }
+        public BluetoothGattCharacteristic characteristic { get; set; }
+    }
 
 
 

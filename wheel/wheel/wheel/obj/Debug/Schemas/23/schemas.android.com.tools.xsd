@@ -2,7 +2,7 @@
 <xs:schema xmlns:tools="http://schemas.android.com/tools" attributeFormDefault="qualified" targetNamespace="http://schemas.android.com/tools" xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:annotation>
     <xs:documentation>v23</xs:documentation>
-    <xs:documentation>21/03/2017 16:03:48</xs:documentation>
+    <xs:documentation>31/03/2017 19:33:41</xs:documentation>
   </xs:annotation>
   <xs:attribute name="layout">
     <xs:annotation>
@@ -12,6 +12,7 @@
       <xs:union memberTypes="xs:string">
         <xs:simpleType>
           <xs:restriction base="xs:string">
+            <xs:enumeration value="@layout/connection" />
             <xs:enumeration value="@layout/joystick" />
             <xs:enumeration value="@layout/list_viewtemplate" />
             <xs:enumeration value="@layout/main" />
@@ -62,6 +63,7 @@
       <xs:union memberTypes="xs:string">
         <xs:simpleType>
           <xs:restriction base="xs:string">
+            <xs:enumeration value="@layout/connection" />
             <xs:enumeration value="@layout/joystick" />
             <xs:enumeration value="@layout/list_viewtemplate" />
             <xs:enumeration value="@layout/main" />
@@ -112,6 +114,7 @@
       <xs:union memberTypes="xs:string">
         <xs:simpleType>
           <xs:restriction base="xs:string">
+            <xs:enumeration value="@layout/connection" />
             <xs:enumeration value="@layout/joystick" />
             <xs:enumeration value="@layout/list_viewtemplate" />
             <xs:enumeration value="@layout/main" />
@@ -162,6 +165,7 @@
       <xs:union memberTypes="xs:string">
         <xs:simpleType>
           <xs:restriction base="xs:string">
+            <xs:enumeration value="@layout/connection" />
             <xs:enumeration value="@layout/joystick" />
             <xs:enumeration value="@layout/list_viewtemplate" />
             <xs:enumeration value="@layout/main" />

@@ -54,7 +54,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bluetooth.cs" />
+    <Compile Include="BluetoothUUID.cs" />
     <Compile Include="ControllerView.cs" />
+    <Compile Include="joystickapp.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="Resources\DeviceAdapter.cs" />
     <Compile Include="Resources\Resource.Designer.cs" />
@@ -68,6 +70,9 @@
       <SubType>Designer</SubType>
     </AndroidResource>
     <AndroidResource Include="Resources\layout\list_viewTemplate.axml">
+      <SubType>Designer</SubType>
+    </AndroidResource>
+    <AndroidResource Include="Resources\layout\Connection.axml">
       <SubType>Designer</SubType>
     </AndroidResource>
   </ItemGroup>
