@@ -17,7 +17,7 @@ using System.Linq;
 
 namespace wheel
 {
-    [Activity(Label = "joystickapp")]
+    [Activity(Label = "wheel")]
     public class joystickapp : Activity
     {
         private TextView t;
@@ -49,6 +49,7 @@ namespace wheel
 
             t = FindViewById<TextView>(Resource.Id.textViewNameConnect);
             t.Text = device.Name;
+            t.SetTextColor(Android.Graphics.Color.Cyan);
 
             ble = new BluetoothConnessione(this, this, null);
             myUUID = new BluetoothUUID();

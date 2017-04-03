@@ -15,10 +15,8 @@ using Android.Util;
 using Java.Util;
 
 
-
 namespace wheel
 {
-
     public class BluetoothScanner : ScanCallback
     {
         public event Action<List<BluetoothDevice>> ScanResultEvent;
