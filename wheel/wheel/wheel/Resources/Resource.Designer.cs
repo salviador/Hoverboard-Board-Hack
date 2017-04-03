@@ -50,6 +50,9 @@ namespace wheel
 			// aapt resource value: 0x7f020001
 			public const int Icon = 2130837505;
 			
+			// aapt resource value: 0x7f020002
+			public const int lente1 = 2130837506;
+			
 			static Drawable()
 			{
 				global::Android.Runtime.ResourceIdManager.UpdateIdValues();
@@ -87,8 +90,11 @@ namespace wheel
 			// aapt resource value: 0x7f05000b
 			public const int linearLayout5 = 2131034123;
 			
+			// aapt resource value: 0x7f050010
+			public const int listView1 = 2131034128;
+			
 			// aapt resource value: 0x7f05000f
-			public const int listView1 = 2131034127;
+			public const int relativeLayout1 = 2131034127;
 			
 			// aapt resource value: 0x7f05000e
 			public const int textAddress = 2131034126;
