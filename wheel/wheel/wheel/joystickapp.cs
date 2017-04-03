@@ -231,6 +231,17 @@ namespace wheel
                                     Finish();
                                 }), 2000);
                 */
+                if (obj != null)
+                {
+                    foreach (BluetoothServiceDevice s in obj)
+                    {
+                        if (s.gatt != null)
+                        {
+                            s.gatt.Disconnect();
+                            s.gatt.Close();
+                        }
+                    }
+                }
                 activity.RunOnUiThread(() => Action_Error("Errore Connessione!!!"));
             }
         }
