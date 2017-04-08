@@ -14,6 +14,9 @@ using Android.Bluetooth.LE;
 using Android.Util;
 using Java.Util;
 
+using Android.Support.V4;
+using Android.Support.V4.App;
+using Android;
 
 namespace wheel
 {
@@ -127,7 +130,7 @@ namespace wheel
         public void Connetti(BluetoothDevice device)
         {
             Android.Bluetooth.Bond b = device.BondState;
-            if ((b == Bond.Bonded)|(b==Bond.None))
+            if ((b == Bond.Bonded)) //| (b==Bond.None))
             {
                BluetoothGatt g = device.ConnectGatt(context, false, this);
 
@@ -140,23 +143,27 @@ namespace wheel
             }
             else
             {
+                // Richidedere permessi per Android 6.0
+               // ActivityCompat.RequestPermissions(activity, new String[] { Manifest.Permission.AccessFineLocation, Manifest.Permission.AccessCoarseLocation}, 1001);
+
+
                 this.myReceiver = new BondStatusBroadcastReceiver();
                 this.myReceiver.Bounded_ConnectDevice_Event += this.MyReceiver_Bounded_ConnectDevice_Event;
                 this.myReceiver.Bounded_ConnectDevice_Event_ERROR += this.MyReceiver_Bounded_ConnectDevice_Event_ERROR;
 
                 IntentFilter intentFilter = new IntentFilter(BluetoothDevice.ActionFound);
-               
+/*               
                 intentFilter.AddAction(BluetoothDevice.ActionNameChanged);
                 intentFilter.AddAction(BluetoothAdapter.ActionDiscoveryStarted);
                 intentFilter.AddAction(BluetoothAdapter.ActionDiscoveryFinished);
                 intentFilter.AddAction(BluetoothAdapter.ActionStateChanged);
                
-
+*/
                 intentFilter.AddAction(BluetoothDevice.ActionBondStateChanged);
                 context.RegisterReceiver(this.myReceiver, intentFilter);
 
-                BluetoothAdapter adapter = BluetoothAdapter.DefaultAdapter;
-                adapter.StartDiscovery();
+                //BluetoothAdapter adapter = BluetoothAdapter.DefaultAdapter;
+                //adapter.StartDiscovery();
 
                 device.CreateBond();
             }
@@ -313,7 +320,7 @@ namespace wheel
             if (BluetoothDevice.ActionBondStateChanged.Equals(action))
             {
                 BluetoothDevice device = (BluetoothDevice)intent.GetParcelableExtra(BluetoothDevice.ExtraDevice);
-
+                
                 if (device.BondState == Bond.Bonded)
                 {
                     // CONNECT
