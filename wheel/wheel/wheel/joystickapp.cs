@@ -190,6 +190,8 @@ namespace wheel
             bool findDeviceJOY = false;
             bool findDeviceTELEMETRY = false;
 
+            BluetoothGattCharacteristic clientchar = null;
+
             //Verifica Servizi se sono compatibili
             foreach (BluetoothServiceDevice s in obj)
             {
@@ -215,13 +217,15 @@ namespace wheel
                         telemetryBLE.service = s.service;
                         telemetryBLE.characteristic = s.characteristic;
                         telemetryBLE.gatt = s.gatt;
-                    }
+                    } 
                 }
             }
 
             if ((findDeviceJOY) && (findDeviceTELEMETRY))
             {
                 //Richietsa Attivavazione Char Notification 
+
+                ble.CLoseAll_SetCharacteristicNotification();
                 ble.SetCharacteristicNotification(telemetryBLE.gatt, telemetryBLE.characteristic, myUUID.CLIENT_UUID);
             }
             else {

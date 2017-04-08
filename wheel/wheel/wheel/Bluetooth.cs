@@ -112,6 +112,8 @@ namespace wheel
 
         public AutoResetEvent WaitCharRecive = new AutoResetEvent(false);
 
+        private Thread thread;
+
         public BluetoothConnessione(Context context, Activity activity, MainActivity mainActivity)
         {
             this.context = context;
@@ -125,9 +127,16 @@ namespace wheel
         public void Connetti(BluetoothDevice device)
         {
             Android.Bluetooth.Bond b = device.BondState;
-            if (b == Bond.Bonded)
+            if ((b == Bond.Bonded)|(b==Bond.None))
             {
-                device.ConnectGatt(context, false, this);
+               BluetoothGatt g = device.ConnectGatt(context, false, this);
+
+               Java.Lang.Reflect.Method m = g.Class.GetMethod("refresh", new Java.Lang.Class[0]);
+                if (m != null)
+                {
+                    m.Invoke(g, new Java.Lang.Object[0]);
+                }
+
             }
             else
             {
@@ -136,8 +145,18 @@ namespace wheel
                 this.myReceiver.Bounded_ConnectDevice_Event_ERROR += this.MyReceiver_Bounded_ConnectDevice_Event_ERROR;
 
                 IntentFilter intentFilter = new IntentFilter(BluetoothDevice.ActionFound);
+               
+                intentFilter.AddAction(BluetoothDevice.ActionNameChanged);
+                intentFilter.AddAction(BluetoothAdapter.ActionDiscoveryStarted);
+                intentFilter.AddAction(BluetoothAdapter.ActionDiscoveryFinished);
+                intentFilter.AddAction(BluetoothAdapter.ActionStateChanged);
+               
+
                 intentFilter.AddAction(BluetoothDevice.ActionBondStateChanged);
                 context.RegisterReceiver(this.myReceiver, intentFilter);
+
+                BluetoothAdapter adapter = BluetoothAdapter.DefaultAdapter;
+                adapter.StartDiscovery();
 
                 device.CreateBond();
             }
@@ -154,7 +173,13 @@ namespace wheel
         //Connetti da device Bond (paired)
         private void MyReceiver_Bounded_ConnectDevice_Event(BluetoothDevice obj)
         {
-            obj.ConnectGatt(context, false, this);
+            BluetoothGatt g = obj.ConnectGatt(context, false, this);
+            
+            Java.Lang.Reflect.Method m = g.Class.GetMethod("refresh", new Java.Lang.Class[0]);
+            if (m != null)
+            {
+                m.Invoke(g, new Java.Lang.Object[0]);
+            }
         }
 
 
@@ -222,21 +247,37 @@ namespace wheel
         }
 
 
+        public void CLoseAll_SetCharacteristicNotification()
+        {
+            if (this.thread != null)
+            {
+                this.thread.Abort();
+                WaitCharRecive.Reset();
+            }
+        }
         public void SetCharacteristicNotification(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, string UUIDClient)
         {
             //Servizi trovati e compatibili
             //Attiva richiesta notifiche
-            Thread thread = new Thread(new ThreadStart(() =>
+            thread = new Thread(new ThreadStart(() =>
             {
                 bool notificationState = false;
 
                 for (int i = 0; i < 3; i++)
                 {
+
+                    gatt.SetCharacteristicNotification(characteristic, true);
+                    BluetoothGattDescriptor descriptor = new BluetoothGattDescriptor(Java.Util.UUID.FromString(UUIDClient), GattDescriptorPermission.Write | GattDescriptorPermission.Read);
+                    characteristic.AddDescriptor(descriptor);
+                    descriptor.SetValue(BluetoothGattDescriptor.EnableNotificationValue.ToArray());
+                    gatt.WriteDescriptor(descriptor);
+
+                    /*
                     BluetoothGattDescriptor desc = characteristic.GetDescriptor(UUID.FromString(UUIDClient));
                     desc.SetValue(BluetoothGattDescriptor.EnableNotificationValue.ToArray<Byte>());
                     gatt.WriteDescriptor(desc);
                     gatt.SetCharacteristicNotification(characteristic, true);
-
+                    */
                     if (WaitCharRecive.WaitOne(5000))
                     {
                         notificationState = true;
