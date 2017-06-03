@@ -130,16 +130,16 @@ namespace wheel
         public void Connetti(BluetoothDevice device)
         {
             Android.Bluetooth.Bond b = device.BondState;
-            if ((b == Bond.Bonded)) //| (b==Bond.None))
+            if ((b == Bond.Bonded))// | (b==Bond.None))
             {
-               BluetoothGatt g = device.ConnectGatt(context, false, this);
-
+               BluetoothGatt g = device.ConnectGatt(this.context, false, this);
+                /*
                Java.Lang.Reflect.Method m = g.Class.GetMethod("refresh", new Java.Lang.Class[0]);
                 if (m != null)
                 {
                     m.Invoke(g, new Java.Lang.Object[0]);
                 }
-
+                */
             }
             else
             {

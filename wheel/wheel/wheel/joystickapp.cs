@@ -14,6 +14,10 @@ using wheel.Resources;
 using Java.Util;
 using System.Linq;
 
+using Android.Support.V4;
+using Android.Support.V4.App;
+using Android;
+using Android.Content.PM;
 
 namespace wheel
 {
@@ -38,6 +42,15 @@ namespace wheel
 
         private string Quale_Layout = String.Empty;
 
+        private readonly string[] Permissions =
+        {
+            Manifest.Permission.Bluetooth,
+            Manifest.Permission.BluetoothAdmin,
+            Manifest.Permission.BluetoothPrivileged,
+            Manifest.Permission.AccessCoarseLocation,
+            Manifest.Permission.AccessFineLocation
+        };
+
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
@@ -51,6 +64,8 @@ namespace wheel
             t.Text = device.Name;
             t.SetTextColor(Android.Graphics.Color.Cyan);
 
+       //     CheckPermissions();
+
             ble = new BluetoothConnessione(this, this, null);
             myUUID = new BluetoothUUID();
 
@@ -62,7 +77,21 @@ namespace wheel
                 ble.Connetti(this.device);                
             }
             Quale_Layout = "TryConnection";
+            
         }
+        private void CheckPermissions()
+        {
+            bool minimumPermissionsGranted = true;
+
+            foreach (string permission in Permissions)
+            {
+                if (CheckSelfPermission(permission) != Permission.Granted) minimumPermissionsGranted = false;
+            }
+
+            // If one of the minimum permissions aren't granted, we request them from the user
+            if (!minimumPermissionsGranted) RequestPermissions(Permissions, 0);
+        }
+
 
         protected override void OnResume()
         {
@@ -153,9 +182,9 @@ namespace wheel
                     myFloat[2] = System.BitConverter.ToSingle(br, 8);
 
                     RunOnUiThread(() => {
-                        battery_textview.Text = myFloat[0].ToString("0.0");
-                        current_mL_textview.Text = myFloat[2].ToString("0.0");
-                        current_mR_textview.Text = myFloat[1].ToString("0.0");
+                        battery_textview.Text = myFloat[0].ToString("0.00");
+                        current_mL_textview.Text = myFloat[2].ToString("0.00");
+                        current_mR_textview.Text = myFloat[1].ToString("0.00");
                     });
                 }
             }

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="wheel.wheel" android:versionCode="1" android:versionName="1.0" android:installLocation="auto">
+  <!--suppress UsesMinSdkAttributes-->
+  <uses-sdk android:minSdkVersion="16" />
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+  <uses-permission android:name="android.permission.BLUETOOTH" />
+  <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+  <uses-permission android:name="android.permission.BLUETOOTH" />
+  <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+  <permission android:name="android.permission.BLUETOOTH_ADMIN" />
+  <permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+  <permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+  <application android:label="wheel" android:name="android.app.Application" android:allowBackup="true" android:debuggable="true">
+    <activity android:label="wheel" android:name="md572af6421fba3d235978d003c54c5d24d.joystickapp" />
+    <activity android:icon="@drawable/icon" android:label="wheel" android:name="md572af6421fba3d235978d003c54c5d24d.MainActivity">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+    <provider android:name="mono.MonoRuntimeProvider" android:exported="false" android:initOrder="2147483647" android:authorities="wheel.wheel.mono.MonoRuntimeProvider.__mono_init__" />
+    <!--suppress ExportedReceiver-->
+    <receiver android:name="mono.android.Seppuku">
+      <intent-filter>
+        <action android:name="mono.android.intent.action.SEPPUKU" />
+        <category android:name="mono.android.intent.category.SEPPUKU.wheel.wheel" />
+      </intent-filter>
+    </receiver>
+  </application>
+  <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
+  <action android:name="android.bluetooth.adapter.action.SCAN_MODE_CHANGED" />
+  <action android:name="android.bluetooth.adapter.action.DISCOVERY_STARTED" />
+  <action android:name="android.bluetooth.adapter.action.DISCOVERY_FINISHED" />
+  <action android:name="android.bluetooth.adapter.action.LOCAL_NAME_CHANGED" />
+  <action android:name="android.bluetooth.device.action.FOUND" />
+  <action android:name="android.bluetooth.device.action.DISAPPEARED" />
+  <action android:name="android.bluetooth.device.action.CLASS_CHANGED" />
+  <action android:name="android.bluetooth.device.action.ACL_CONNECTED" />
+  <action android:name="android.bluetooth.device.action.ACL_DISCONNECT_REQUESTED" />
+  <action android:name="android.bluetooth.device.action.ACL_DISCONNECTED" />
+  <action android:name="android.bluetooth.device.action.NAME_CHANGED" />
+  <action android:name="android.bluetooth.device.action.BOND_STATE_CHANGED" />
+  <action android:name="android.bluetooth.device.action.NAME_FAILED" />
+  <action android:name="android.bluetooth.device.action.PAIRING_REQUEST" />
+  <action android:name="android.bluetooth.device.action.PAIRING_CANCEL" />
+  <action android:name="android.bluetooth.device.action.UUID" />
+  <action android:name="android.bluetooth.headset.action.STATE_CHANGED" />
+  <action android:name="android.bluetooth.headset.action.AUDIO_STATE_CHANGED" />
+  <action android:name="android.bluetooth.devicepicker.action.LAUNCH" />
+  <action android:name="android.bluetooth.devicepicker.action.DEVICE_SELECTED" />
+  <intent-filter>
+    <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
+    <action android:name="android.bluetooth.adapter.action.SCAN_MODE_CHANGED" />
+    <action android:name="android.bluetooth.adapter.action.DISCOVERY_STARTED" />
+    <action android:name="android.bluetooth.adapter.action.DISCOVERY_FINISHED" />
+    <action android:name="android.bluetooth.adapter.action.LOCAL_NAME_CHANGED" />
+    <action android:name="android.bluetooth.device.action.FOUND" />
+    <action android:name="android.bluetooth.device.action.DISAPPEARED" />
+    <action android:name="android.bluetooth.device.action.CLASS_CHANGED" />
+    <action android:name="android.bluetooth.device.action.ACL_CONNECTED" />
+    <action android:name="android.bluetooth.device.action.ACL_DISCONNECT_REQUESTED" />
+    <action android:name="android.bluetooth.device.action.ACL_DISCONNECTED" />
+    <action android:name="android.bluetooth.device.action.NAME_CHANGED" />
+    <action android:name="android.bluetooth.device.action.BOND_STATE_CHANGED" />
+    <action android:name="android.bluetooth.device.action.NAME_FAILED" />
+    <action android:name="android.bluetooth.device.action.PAIRING_REQUEST" />
+    <action android:name="android.bluetooth.device.action.PAIRING_CANCEL" />
+    <action android:name="android.bluetooth.device.action.UUID" />
+    <action android:name="android.bluetooth.headset.action.STATE_CHANGED" />
+    <action android:name="android.bluetooth.headset.action.AUDIO_STATE_CHANGED" />
+    <action android:name="android.bluetooth.devicepicker.action.LAUNCH" />
+    <action android:name="android.bluetooth.devicepicker.action.DEVICE_SELECTED" />
+  </intent-filter>
+</manifest>
