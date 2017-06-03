@@ -51,7 +51,7 @@ MultiCoreRunAll=1
 Show=1 1
 Sort=2 0
 [DebugChecksum]
-Checksum=1955957719
+Checksum=-1179890275
 [CodeCoverage]
 Enabled=_ 0
 [CallStack]
@@ -77,14 +77,21 @@ Fmt3={W}1:temp32	3	0
 Fmt4={W}1:tu32	4	0
 Fmt5={W}1:wii_JOYdati.I2CTxDone	3	0
 Fmt6={W}1:wii_JOYdati.stato	3	0
-Fmt7={W}42:motorR.BLDCMotorL_flag	3	0
-Fmt8={W}42:temp16	3	0
-Fmt9={W}42:temp8	3	0
-Fmt10={W}42:temp8case	3	0
-Fmt11={W}42:tempLIO	4	0
-Fmt12={W}42:temp_MOTOR_R_START	3	0
-Fmt13={W}42:temp__IO	4	0
-Fmt14={W}42:wii_JOYdati.ay	3	0
+Fmt7={W}42:datatoRead	3	0
+Fmt8={W}42:ic	3	0
+Fmt9={W}42:motorR.BLDCMotorL_flag	3	0
+Fmt10={W}42:telemetry.counterBufferRX	3	0
+Fmt11={W}42:telemetry.dataREADY_JOYSTICK	3	0
+Fmt12={W}42:telemetry.joyx	3	0
+Fmt13={W}42:telemetry.joyy	3	0
+Fmt14={W}42:temp16	3	0
+Fmt15={W}42:temp8	3	0
+Fmt16={W}42:temp8case	3	0
+Fmt17={W}42:tempLIO	4	0
+Fmt18={W}42:temp_MOTOR_R_START	3	0
+Fmt19={W}42:temp__IO	4	0
+Fmt20={W}42:wii_JOYdati.ax	3	0
+Fmt21={W}42:wii_JOYdati.ay	3	0
 [DriverProfiling]
 Enabled=0
 Mode=3

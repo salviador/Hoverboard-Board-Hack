@@ -1564,6 +1564,7 @@ static void UART_DMATransmitCplt(DMA_HandleTypeDef *hdma)
     /* Enable the UART Transmit Complete Interrupt */    
     __HAL_UART_ENABLE_IT(huart, UART_IT_TC);
     huart->State=HAL_UART_STATE_READY;  //<--- i add this line to solve the 
+     HAL_UART_TxCpltCallback(huart);
   }
   /* DMA Circular mode */
   else

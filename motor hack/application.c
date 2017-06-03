@@ -356,16 +356,16 @@ float scale_x(float x, float Vbatt){
   return axn;
 }
                                   //Vbatt,      Power max
-const float Battery_power[][10] = {{40.0,       43.0/100.0},    //30% max potenza
-                                  {38.0,        45.0/100.0},
-                                  {37.0,        45.0/100.0},
-                                  {36.0,        45.0/100.0},
-                                  {35.0,        45.0/100.0},
-                                  {34.0,        46.0/100.0},
-                                  {33.0,        47.0/100.0},
-                                  {32.0,        48.0/100.0},
-                                  {31.0,        49.0/100.0},
-                                  {30.0,        50.0/100.0}};
+const float Battery_power[][10] = {{40.0,       60.0/100.0},    //30% max potenza
+                                  {38.0,        60.0/100.0},
+                                  {37.0,        61.0/100.0},
+                                  {36.0,        62.0/100.0},
+                                  {35.0,        65.0/100.0},
+                                  {34.0,        65.0/100.0},
+                                  {33.0,        67.0/100.0},
+                                  {32.0,        67.0/100.0},
+                                  {31.0,        67.0/100.0},
+                                  {30.0,        67.0/100.0}};
 float get_powerMax(float Vbattery){
   if(Vbattery >= Battery_power[0][0]){
     return Battery_power[0][1];
@@ -643,6 +643,66 @@ void Current_Motor_TASK(void){
 
 //  MOTOR
 
+/*
+void go_motor(float throttle, float steering, float Vbatt){
+  float limitSup, limitInf ;
+  
+  limitSup = 1000.0 * get_powerMax(Vbatt);
+  limitInf = limitSup * -1;
+    
+      if(throttle>0.0){
+        if(throttle > 20){
+          app.motATS=(int8_t)(throttle+(steering * 0.333));
+          app.motBTS=(int8_t)(throttle-(steering * 0.333));
+        }else if((throttle > 15)){
+          app.motATS=(int8_t)(throttle+(steering * 0.5));
+          app.motBTS=(int8_t)(throttle-(steering * 0.5));
+        }else{
+          app.motATS=(int8_t)(throttle+(steering));
+          app.motBTS=(int8_t)(throttle-(steering));
+        }
+      }else if(throttle<0.0){
+          app.motATS=(int8_t)(throttle+(steering));
+          app.motBTS=(int8_t)(throttle-(steering));
+      }else{
+          app.motATS=(int8_t)steering;
+          app.motBTS=(int8_t)((steering)*-1);
+      }
+
+    //printf("%d ; %d\r\n",motATS,motBTS); 
+    
+      if(app.motATS >= 0){
+        //0 ~ 100
+        if(app.motATS > limitSup){
+          app.motATS = (int16_t)limitSup;
+        }
+        MotorR_pwm(app.motATS);      
+      }else{
+        //0 ~ -100
+        if(app.motATS < limitInf){
+          app.motATS = (int16_t)limitInf;
+        }
+        //app.motATS = app.motATS * -1;
+        MotorR_pwm(app.motATS);      
+      }
+      
+      if(app.motBTS >= 0){
+        //0 ~ 100
+        if(app.motBTS > limitSup){
+          app.motBTS = (int16_t)limitSup;
+        }
+        MotorL_pwm(app.motBTS );      
+      }else{
+        //0 ~ -100
+        if(app.motBTS < limitInf){
+          app.motBTS = (int16_t)limitInf;
+        }
+        //MOTOR_VALUE.motBTS = MOTOR_VALUE.motBTS * -1;
+        MotorL_pwm(app.motBTS );      
+      }    
+}
+*/
+
 // EXPERIMENT
 // http://www.impulseadventure.com/elec/robot-differential-steering.html
 void go_motor(float throttle, float steering, float Vbatt){
@@ -666,7 +726,7 @@ int     nMotMixR;           // Motor (right) mixed output           (-128..+127)
 //                away from the X-axis (Y=0). A greater value will assign
 //                more of the joystick's range to pivot actions.
 //                Allowable range: (0..+127)
-float fPivYLimit = 32.0;
+float fPivYLimit = 85.0;
 			  		
 // TEMP VARIABLES
 float   nMotPremixL;    // Motor (left)  premixed output        (-128..+127)
@@ -706,24 +766,8 @@ nMotMixL = (int)((1.0-fPivScale)*nMotPremixL + fPivScale*( nPivSpeed));
 nMotMixR = (int)((1.0-fPivScale)*nMotPremixR + fPivScale*(-nPivSpeed));
 
 
-//Aggiungi Frizione!!!
-/*
-if(nMotMixL>0){
-  app.motATS = nMotMixL + FRICTION;
-}else if(nMotMixL<0){
-  app.motATS = nMotMixL - FRICTION;
-}else{
-  app.motATS = nMotMixL;
-}
-if(nMotMixR>0){
-  app.motBTS = nMotMixR + FRICTION;
-}else if(nMotMixR<0){
-  app.motBTS = nMotMixR - FRICTION;
-}else{
-  app.motBTS = nMotMixR;
-}
-*/
 
+/*
 if((nMotMixL>0)&&(nMotMixR>0)){
   app.motATS = nMotMixL + FRICTION;
   app.motBTS = nMotMixR + FRICTION;
@@ -742,10 +786,10 @@ if((nMotMixL>0)&&(nMotMixR>0)){
     app.motBTS = nMotMixR;
   }
 }
+*/
 
-
-//app.motATS = nMotMixL;
-//app.motBTS = nMotMixR;
+app.motATS = nMotMixL;
+app.motBTS = nMotMixR;
 
       if(app.motATS >= 0){
         //0 ~ 100
