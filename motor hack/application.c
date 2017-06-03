@@ -143,11 +143,11 @@ void applcation_TASK(void){
       tempf1 = app.ayn;
       tempf2 = app.axn;
       
-      go_motor(tempf1, tempf2, battery_dati.VBatt);
+      go_motor(tempf1, tempf2, battery_dati.VBatt, 0);
 
       //soft_run_nohand
       temp8 = wii_JOYdati.ay;
-      if((wii_JOYdati.bz == 0)&&((((float)temp8 - app.center_media_Y) > 4.0))){
+      if((wii_JOYdati.bz == 0)&&((((float)temp8 - app.center_media_Y) > 4.0))&&(telemetry.dataREADY_JOYSTICK==0)){
         if((HAL_GetTick() - app.tsoft_run)>=1000){
             app.cruise_soft_run_nohand = 0.0;
             app.stato = app_soft_run_nohand;
@@ -167,8 +167,44 @@ void applcation_TASK(void){
         }
         telemetry.dataLast_Command = 0;
       }
+      //Hard RUN joystick press 'c' switch      
+      if((wii_JOYdati.bc == 0)&&(wii_JOYdati.bz == 1)&&(telemetry.dataREADY_JOYSTICK==0)){
+          app.stato = app_hard_run;
+          //accelleration_XY_Reset();     //??????
+      }                        
     break;
     
+    case app_hard_run:
+     //OUTDOOR LIMIT FULL
+      app.ayn = normalize_y(wii_JOYdati.ay);
+      app.axn = normalize_x(wii_JOYdati.ax);
+
+      //scala x soft run
+      tempf1 = app.ayn * 0.90; 
+      app.ayn = tempf1;
+      tempf2 = app.axn * 0.90; 
+      //tempf2 = battery_dati.VBatt;       
+      app.axn = tempf2;
+
+      app.ayn = accellerationYHARD(app.ayn);
+      app.axn = accellerationXHARD(app.axn);
+      
+      tempf1 = app.ayn;
+      tempf2 = app.axn;
+      if(tempf1 < 0){
+        tempf1 = 0;
+      }     
+      go_motor(tempf1, tempf2, battery_dati.VBatt, 1);
+      
+      //Soft RUN joystick press 'c' switch      
+      if(wii_JOYdati.bc == 1){
+          //MotorR_stop();     
+          //MotorL_stop();     
+          //accelleration_XY_Reset();     //??????
+          app.stato = app_soft_run;          
+      }                        
+    break;
+        
     case app_soft_run_nohand:
       app.ayn = normalize_y(wii_JOYdati.ay);
       app.axn = normalize_x(wii_JOYdati.ax);
@@ -205,7 +241,7 @@ void applcation_TASK(void){
       }     
       //Stop Cruise
       if(app.ayn <= -23.0){
-        go_motor(0, 0, battery_dati.VBatt);     
+        go_motor(0, 0, battery_dati.VBatt,0);     
         MotorR_stop();     
         MotorL_stop();             
         accelleration_XY_Reset();        
@@ -215,7 +251,7 @@ void applcation_TASK(void){
       }
       tempf1 = app.cruise_soft_run_nohand;
       tempf2 = app.axn;
-      go_motor(tempf1, tempf2, battery_dati.VBatt);            
+      go_motor(tempf1, tempf2, battery_dati.VBatt,0);            
     break;
   
     case app_soft_ANDROIDAPP:
@@ -234,7 +270,7 @@ void applcation_TASK(void){
         }
       }
       if((HAL_GetTick() - app.tAndroidAPP)>500){    //Se non ricevi risposta dalla APP esci dalla modalita ANDROID APP [BLYNK]
-        go_motor(0, 0, battery_dati.VBatt); 
+        go_motor(0, 0, battery_dati.VBatt,0); 
         MotorR_stop();     
         MotorL_stop();     
         app.cruise_soft_run_nohand = 0.0;
@@ -273,7 +309,7 @@ void applcation_TASK(void){
       app.axn = accellerationX(app.axn);
       tempf1 = app.ayn;
       tempf2 = app.axn;
-      go_motor(tempf1, tempf2, battery_dati.VBatt);
+      go_motor(tempf1, tempf2, battery_dati.VBatt,0);
     break;
     
     default:
@@ -528,6 +564,56 @@ float accellerationX(float value){
   return tval;
 }
 
+float accellerationYHARD(float value){
+  /* value -> -1000 0 +1000 */
+  float tval;
+  
+  tval = app.faccY;
+  
+  //EXPEIMENT
+  if(value > tval){
+    app.faccY = app.faccY + ACCELLERATION_CONSTANT_HARD;
+    //limit
+    if(app.faccY > value){
+      app.faccY = (float)value;
+    }
+  }
+  if(value < tval){
+    app.faccY = app.faccY - ACCELLERATION_CONSTANT_HARD;
+    //limit
+    if(app.faccY < value){
+      app.faccY = (float)value;
+    }
+  }  
+  tval = app.faccY;
+  return tval;
+}
+float accellerationXHARD(float value){
+  /* value -> -1000 0 +1000 */
+  float tval;
+  
+  tval = app.faccX;
+  
+  //EXPERIMENT
+  if(value > tval){
+    app.faccX = app.faccX + ACCELLERATION_CONSTANT_HARD;
+    //limit
+    if(app.faccX > value){
+      app.faccX = (float)value;
+    }
+  }
+  if(value < tval){  
+    app.faccX = app.faccX - ACCELLERATION_CONSTANT_HARD;
+    //limit
+    if(app.faccX < value){
+      app.faccX = (float)value;
+    }
+  }
+  tval = app.faccX;
+
+  return tval;
+}
+
 
 
 // BATTERY TASK
@@ -705,12 +791,16 @@ void go_motor(float throttle, float steering, float Vbatt){
 
 // EXPERIMENT
 // http://www.impulseadventure.com/elec/robot-differential-steering.html
-void go_motor(float throttle, float steering, float Vbatt){
+void go_motor(float throttle, float steering, float Vbatt, uint8_t fullpower){
   float limitSup, limitInf ;
   
-  limitSup = 1000.0 * get_powerMax(Vbatt);
-  limitInf = limitSup * -1;
-  
+  if(fullpower==0){
+    limitSup = 1000.0 * get_powerMax(Vbatt);
+    limitInf = limitSup * -1;
+  }else{
+    limitSup = 1000.0;
+    limitInf = limitSup * -1;
+  }
   
 // INPUTS
 int     nJoyX;              // Joystick X input                     (-128..+127)

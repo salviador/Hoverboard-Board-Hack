@@ -7,9 +7,10 @@
    #include "stm32f1xx_hal.h"
 
    #define ACCELLERATION_CONSTANT   0.60;  //1;  //30; //0.1;
+   #define ACCELLERATION_CONSTANT_HARD   0.030;  //1;  //30; //0.1;
    #define FRICTION 30
    
-   enum APP_STATO {app_init, app_soft_run, app_soft_run_nohand, app_soft_ANDROIDAPP};
+   enum APP_STATO {app_init, app_soft_run, app_hard_run, app_soft_run_nohand, app_soft_ANDROIDAPP};
    
     struct APPLICATION_dati{
       volatile __IO uint8_t stato;
@@ -64,8 +65,9 @@
   float accellerationY(float value);
   float accellerationX(float value);
   void accelleration_XY_Reset(void);
-  void go_motor(float throttle, float steering, float Vbatt);
-
+  void go_motor(float throttle, float steering, float Vbatt, uint8_t fullpower);
+  float accellerationYHARD(float value);
+  float accellerationXHARD(float value);
 
 
   extern void Error_Handler(void);
