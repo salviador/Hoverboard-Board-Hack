@@ -1,4 +1,4 @@
-"C:\Users\michele\Desktop\STM32_BLE\STM32L0_BLE - JOY\Drivers\BSP\STM32L0xx_Nucleo\stm32l0xx_nucleo.c"
+"C:\Users\michele\Desktop\STM32_BLE\STM32L0_BLE - JOY\Drivers\BSP\X-NUCLEO-IDB0xA1\stm32_bluenrg_ble.c"
 -std=c11
 -ferror-limit=100
 -I
